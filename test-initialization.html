@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialization Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #2ecc71; }
+        .error { background: #e74c3c; }
+        .warning { background: #f39c12; }
+        .info { background: #3498db; }
+        pre {
+            background: #2c3e50;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>AG&P Attendance System - Initialization Test</h1>
+    <div id="test-results"></div>
+
+    <!-- Load the app -->
+    <script src="app-browser.js"></script>
+
+    <script>
+        const results = document.getElementById('test-results');
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function addCodeResult(title, code, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${title}</strong><pre>${code}</pre>`;
+            results.appendChild(div);
+        }
+
+        async function runTests() {
+            addResult('Starting initialization tests...', 'info');
+
+            // Test 1: Check if AttendanceApp class is available
+            try {
+                if (typeof window.AttendanceApp !== 'undefined') {
+                    addResult('✓ AttendanceApp class is available', 'success');
+                } else {
+                    addResult('✗ AttendanceApp class is NOT available', 'error');
+                    return;
+                }
+            } catch (error) {
+                addResult(`✗ Error checking AttendanceApp: ${error.message}`, 'error');
+                return;
+            }
+
+            // Test 2: Create instance
+            try {
+                const app = new window.AttendanceApp();
+                addResult('✓ AttendanceApp instance created successfully', 'success');
+                
+                // Test 3: Check initial state
+                addCodeResult('Initial State:', JSON.stringify(app.state, null, 2));
+                
+                // Test 4: Check if methods exist
+                const methods = ['init', 'renderDashboard', 'showNotification', 'getDefaultPermissions'];
+                methods.forEach(method => {
+                    if (typeof app[method] === 'function') {
+                        addResult(`✓ Method ${method} exists`, 'success');
+                    } else {
+                        addResult(`✗ Method ${method} is missing`, 'error');
+                    }
+                });
+
+                // Test 5: Initialize the app
+                addResult('Attempting to initialize app...', 'info');
+                const initResult = await app.init();
+                addResult('✓ App initialization completed', 'success');
+                
+                // Test 6: Check if initialized
+                if (app.initialized) {
+                    addResult('✓ App marked as initialized', 'success');
+                } else {
+                    addResult('✗ App not marked as initialized', 'error');
+                }
+
+                // Test 7: Check permissions
+                addCodeResult('User Permissions:', JSON.stringify(app.state.user.permissions, null, 2));
+
+                // Test 8: Test dashboard rendering
+                addResult('Testing dashboard rendering...', 'info');
+                
+                // Create a test container
+                const testContainer = document.createElement('div');
+                testContainer.id = 'dashboard-section';
+                document.body.appendChild(testContainer);
+                
+                app.renderDashboard();
+                
+                if (testContainer.innerHTML.includes('welcome-card')) {
+                    addResult('✓ Dashboard rendered successfully', 'success');
+                } else {
+                    addResult('✗ Dashboard rendering failed', 'error');
+                    addCodeResult('Dashboard HTML:', testContainer.innerHTML.substring(0, 500) + '...');
+                }
+
+                // Test 9: Test notification system
+                addResult('Testing notification system...', 'info');
+                app.showNotification('Test notification', 'success');
+                
+                setTimeout(() => {
+                    const notifications = document.querySelectorAll('.notification');
+                    if (notifications.length > 0) {
+                        addResult('✓ Notification system working', 'success');
+                    } else {
+                        addResult('✗ Notification system not working', 'error');
+                    }
+                }, 100);
+
+                addResult('All tests completed!', 'success');
+
+            } catch (error) {
+                addResult(`✗ Error during testing: ${error.message}`, 'error');
+                addCodeResult('Error Stack:', error.stack);
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 100);
+        });
+    </script>
+</body>
+</html>

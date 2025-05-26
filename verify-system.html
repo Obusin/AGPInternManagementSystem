@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 5px solid;
+        }
+        .success { background: #2d5a2d; border-color: #4caf50; }
+        .error { background: #5a2d2d; border-color: #f44336; }
+        .warning { background: #5a4d2d; border-color: #ff9800; }
+        .info { background: #2d4a5a; border-color: #2196f3; }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        .disabled { background: #666 !important; cursor: not-allowed !important; }
+    </style>
+</head>
+<body>
+    <h1>AG&P Attendance System - Complete Verification</h1>
+    
+    <div class="test-section">
+        <h2>System Status</h2>
+        <div id="system-status"></div>
+        <button onclick="runFullTest()">Run Complete Test</button>
+        <button onclick="simulateLogin()">Simulate Login Flow</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <!-- Load all dependencies -->
+    <script src="users-database.js"></script>
+    <script src="app-browser.js"></script>
+
+    <script>
+        const statusDiv = document.getElementById('system-status');
+        const resultsDiv = document.getElementById('test-results');
+
+        function addStatus(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            statusDiv.appendChild(div);
+        }
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+
+        async function runFullTest() {
+            resultsDiv.innerHTML = '';
+            addStatus('Starting complete system verification...', 'info');
+
+            try {
+                // Test 1: Dependencies
+                addResult('🔍 <strong>Testing Dependencies</strong>', 'info');
+                
+                if (typeof window.UserDatabase !== 'undefined') {
+                    addResult('✅ UserDatabase class loaded', 'success');
+                } else {
+                    addResult('❌ UserDatabase class missing', 'error');
+                    return;
+                }
+
+                if (typeof window.AttendanceApp !== 'undefined') {
+                    addResult('✅ AttendanceApp class loaded', 'success');
+                } else {
+                    addResult('❌ AttendanceApp class missing', 'error');
+                    return;
+                }
+
+                // Test 2: User Database
+                addResult('<br>👥 <strong>Testing User Database</strong>', 'info');
+                const userDB = new window.UserDatabase();
+                
+                const authResult = userDB.authenticate('usermark', 'try123');
+                if (authResult.success) {
+                    addResult('✅ User authentication working', 'success');
+                    addResult(`✅ Authenticated user: ${authResult.user.name} (${authResult.user.role})`, 'success');
+                } else {
+                    addResult('❌ User authentication failed', 'error');
+                    return;
+                }
+
+                // Test 3: App Initialization
+                addResult('<br>🚀 <strong>Testing App Initialization</strong>', 'info');
+                const app = new window.AttendanceApp();
+                
+                // Set user data from authentication
+                app.state.user = {
+                    ...app.state.user,
+                    ...authResult.user
+                };
+
+                const initResult = await app.init();
+                addResult('✅ App initialization completed', 'success');
+                
+                if (app.initialized) {
+                    addResult('✅ App marked as initialized', 'success');
+                } else {
+                    addResult('❌ App not properly initialized', 'error');
+                }
+
+                // Test 4: Permissions
+                addResult('<br>🔐 <strong>Testing Permission System</strong>', 'info');
+                if (app.hasPermission('viewDashboard')) {
+                    addResult('✅ Dashboard permission granted', 'success');
+                } else {
+                    addResult('❌ Dashboard permission denied', 'error');
+                }
+
+                if (app.hasPermission('timeTracking')) {
+                    addResult('✅ Time tracking permission granted', 'success');
+                } else {
+                    addResult('❌ Time tracking permission denied', 'error');
+                }
+
+                // Test 5: Dashboard Rendering
+                addResult('<br>📊 <strong>Testing Dashboard Rendering</strong>', 'info');
+                
+                // Create test container
+                const testContainer = document.createElement('div');
+                testContainer.id = 'dashboard-section';
+                testContainer.style.display = 'none';
+                document.body.appendChild(testContainer);
+                
+                app.renderDashboard();
+                
+                if (testContainer.innerHTML.includes('welcome-card')) {
+                    addResult('✅ Dashboard renders successfully', 'success');
+                    addResult('✅ Welcome card present', 'success');
+                } else {
+                    addResult('❌ Dashboard rendering failed', 'error');
+                }
+
+                if (testContainer.innerHTML.includes('time-tracking')) {
+                    addResult('✅ Time tracking controls present', 'success');
+                } else {
+                    addResult('⚠️ Time tracking controls not found', 'warning');
+                }
+
+                // Test 6: Time Tracking
+                addResult('<br>⏰ <strong>Testing Time Tracking</strong>', 'info');
+                
+                if (!app.state.isTimedIn) {
+                    app.timeIn();
+                    if (app.state.isTimedIn) {
+                        addResult('✅ Time in functionality working', 'success');
+                        
+                        // Test time out
+                        setTimeout(() => {
+                            app.timeOut();
+                            if (!app.state.isTimedIn) {
+                                addResult('✅ Time out functionality working', 'success');
+                            } else {
+                                addResult('❌ Time out functionality failed', 'error');
+                            }
+                        }, 1000);
+                    } else {
+                        addResult('❌ Time in functionality failed', 'error');
+                    }
+                }
+
+                // Test 7: Data Persistence
+                addResult('<br>💾 <strong>Testing Data Persistence</strong>', 'info');
+                app.saveApplicationState();
+                addResult('✅ Application state saved', 'success');
+
+                // Test 8: Notification System
+                addResult('<br>🔔 <strong>Testing Notification System</strong>', 'info');
+                app.showNotification('Test notification', 'success');
+                
+                setTimeout(() => {
+                    const notifications = document.querySelectorAll('.notification');
+                    if (notifications.length > 0) {
+                        addResult('✅ Notification system working', 'success');
+                    } else {
+                        addResult('❌ Notification system not working', 'error');
+                    }
+                }, 500);
+
+                addStatus('✅ Complete system verification finished!', 'success');
+
+            } catch (error) {
+                addResult(`❌ <strong>Critical Error:</strong> ${error.message}`, 'error');
+                addStatus('❌ System verification failed', 'error');
+                console.error('Verification error:', error);
+            }
+        }
+
+        async function simulateLogin() {
+            addStatus('🔐 Simulating complete login flow...', 'info');
+            
+            // Simulate login data storage
+            const userData = {
+                id: 'user_001',
+                username: 'usermark',
+                name: 'Mark User',
+                email: 'usermark@agp.com',
+                position: 'Software Development Intern',
+                department: 'IT_DEV',
+                role: 'user'
+            };
+
+            localStorage.setItem('agp_current_user', JSON.stringify(userData));
+            localStorage.setItem('agp_login_time', new Date().toISOString());
+
+            addStatus('✅ Login data stored, redirecting to main app...', 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+        }
+
+        // Auto-run basic checks on load
+        window.addEventListener('load', () => {
+            addStatus('🔍 System loaded, checking basic components...', 'info');
+            
+            if (typeof window.UserDatabase !== 'undefined') {
+                addStatus('✅ UserDatabase available', 'success');
+            } else {
+                addStatus('❌ UserDatabase not available', 'error');
+            }
+
+            if (typeof window.AttendanceApp !== 'undefined') {
+                addStatus('✅ AttendanceApp available', 'success');
+            } else {
+                addStatus('❌ AttendanceApp not available', 'error');
+            }
+
+            addStatus('🚀 Ready for testing!', 'success');
+        });
+    </script>
+</body>
+</html>

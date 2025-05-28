@@ -4,35 +4,7 @@
  */
 
 export const DateUtils = {
-    /**
-     * Format date for display
-     * @param {Date|string} date - Date to format
-     * @param {string} format - Format type ('short', 'long', 'time', 'datetime')
-     * @returns {string} Formatted date string
-     */
-    formatDate(date, format = 'short') {
-        if (!date) return '';
 
-        const dateObj = typeof date === 'string' ? new Date(date) : date;
-
-        if (isNaN(dateObj.getTime())) return 'Invalid Date';
-
-        const options = {
-            short: { year: 'numeric', month: 'short', day: 'numeric' },
-            long: { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' },
-            time: { hour: '2-digit', minute: '2-digit', hour12: true },
-            datetime: {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            }
-        };
-
-        return dateObj.toLocaleDateString('en-US', options[format] || options.short);
-    },
 
     /**
      * Format time for display
@@ -114,37 +86,7 @@ export const DateUtils = {
         return dateObj >= startOfWeek && dateObj <= endOfWeek;
     },
 
-    /**
-     * Get start and end of week for a given date
-     * @param {Date|string} date - Reference date
-     * @returns {Object} Object with start and end dates
-     */
-    getWeekRange(date = new Date()) {
-        const dateObj = typeof date === 'string' ? new Date(date) : new Date(date);
-        const day = dateObj.getDay();
-        const start = new Date(dateObj);
-        start.setDate(dateObj.getDate() - day);
-        start.setHours(0, 0, 0, 0);
 
-        const end = new Date(start);
-        end.setDate(start.getDate() + 6);
-        end.setHours(23, 59, 59, 999);
-
-        return { start, end };
-    },
-
-    /**
-     * Get start and end of month for a given date
-     * @param {Date|string} date - Reference date
-     * @returns {Object} Object with start and end dates
-     */
-    getMonthRange(date = new Date()) {
-        const dateObj = typeof date === 'string' ? new Date(date) : new Date(date);
-        const start = new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
-        const end = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0, 23, 59, 59, 999);
-
-        return { start, end };
-    },
 
     /**
      * Calculate duration between two times
@@ -267,6 +209,100 @@ export const DateUtils = {
         }
 
         return count;
+    },
+
+    /**
+     * Check if two dates are the same day
+     * @param {Date|string} date1 - First date
+     * @param {Date|string} date2 - Second date
+     * @returns {boolean} True if dates are the same day
+     */
+    isSameDay(date1, date2) {
+        if (!date1 || !date2) return false;
+
+        const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
+        const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
+
+        return d1.getFullYear() === d2.getFullYear() &&
+               d1.getMonth() === d2.getMonth() &&
+               d1.getDate() === d2.getDate();
+    },
+
+    /**
+     * Format date for display with different formats
+     * @param {Date|string} date - Date to format
+     * @param {string} format - Format type ('iso', 'full', 'short', 'long', 'time', 'datetime')
+     * @returns {string} Formatted date string
+     */
+    formatDate(date, format = 'short') {
+        if (!date) return '';
+
+        const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+        if (isNaN(dateObj.getTime())) return 'Invalid Date';
+
+        const options = {
+            iso: null, // Special case for ISO format
+            full: {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            },
+            short: { year: 'numeric', month: 'short', day: 'numeric' },
+            long: { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' },
+            time: { hour: '2-digit', minute: '2-digit', hour12: true },
+            datetime: {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }
+        };
+
+        if (format === 'iso') {
+            return dateObj.toISOString().split('T')[0];
+        }
+
+        return dateObj.toLocaleDateString('en-US', options[format] || options.short);
+    },
+
+    /**
+     * Get week range with proper ISO date strings
+     * @param {Date|string} date - Reference date
+     * @returns {Object} Object with start and end dates as ISO strings
+     */
+    getWeekRange(date = new Date()) {
+        const dateObj = typeof date === 'string' ? new Date(date) : new Date(date);
+        const day = dateObj.getDay();
+        const start = new Date(dateObj);
+        start.setDate(dateObj.getDate() - day);
+
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+
+        return {
+            start: start.toISOString().split('T')[0],
+            end: end.toISOString().split('T')[0]
+        };
+    },
+
+    /**
+     * Get month range with proper ISO date strings
+     * @param {Date|string} date - Reference date
+     * @returns {Object} Object with start and end dates as ISO strings
+     */
+    getMonthRange(date = new Date()) {
+        const dateObj = typeof date === 'string' ? new Date(date) : new Date(date);
+        const start = new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
+        const end = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0);
+
+        return {
+            start: start.toISOString().split('T')[0],
+            end: end.toISOString().split('T')[0]
+        };
     }
 };
 

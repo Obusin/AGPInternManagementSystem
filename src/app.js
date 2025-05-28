@@ -663,7 +663,7 @@ class AttendanceApp {
     /**
      * Open activity modal
      */
-    openActivityModal(activityId = null) {
+    openActivityModal(activityId = null, selectedDate = null) {
         // Create modal if it doesn't exist
         let modal = document.getElementById('activity-modal');
         if (!modal) {
@@ -728,6 +728,14 @@ class AttendanceApp {
                 e.preventDefault();
                 this.saveActivity();
             });
+        }
+
+        // Set the date if provided
+        if (selectedDate) {
+            const dateInput = modal.querySelector('#activity-date');
+            if (dateInput) {
+                dateInput.value = selectedDate;
+            }
         }
 
         // Show modal

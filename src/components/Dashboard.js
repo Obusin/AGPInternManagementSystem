@@ -120,16 +120,18 @@ export class Dashboard {
         const userPosition = currentUser ? currentUser.position : 'Team Member';
 
         return `
-            <!-- Welcome Card - Moved to Top -->
+            <!-- Welcome Card - Improved Design -->
             <div class="welcome-card">
                 <div class="welcome-content">
                     <div class="welcome-text">
-                        <h2 id="welcome-message">Welcome back, ${userName}!</h2>
-                        <p id="welcome-subtext">
-                            <span class="role-badge" style="background-color: var(--primary-color); color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-right: 8px;">
+                        <h2 id="welcome-message" class="welcome-title">Welcome back, ${userName}!</h2>
+                        <p id="welcome-subtext" class="welcome-subtitle">
+                            <span class="role-badge role-badge--${userRole}">
                                 ${userRole.toUpperCase()}
                             </span>
-                            ${userPosition} • Track your attendance and monitor your progress.
+                            <span class="position-text">${userPosition}</span>
+                            <span class="separator">•</span>
+                            <span class="description-text">Track your attendance and monitor your progress</span>
                         </p>
                     </div>
                     <div class="welcome-stats">
@@ -147,9 +149,9 @@ export class Dashboard {
 
             <div class="section-header">
                 <div class="header-left">
-                    <h1>
-                        <i class="fas fa-home"></i>
-                        Dashboard
+                    <h1 class="page-title">
+                        <i class="fas fa-home page-title-icon"></i>
+                        <span class="page-title-text">Dashboard</span>
                     </h1>
                 </div>
                 <div class="header-center">
@@ -158,12 +160,12 @@ export class Dashboard {
                         <div class="current-date" id="live-date">Loading...</div>
                     </div>
                 </div>
-                <div class="actions">
-                    <button class="action-btn primary" id="barcode-scan-btn">
+                <div class="header-actions">
+                    <button class="action-btn action-btn--primary" id="barcode-scan-btn">
                         <i class="fas fa-barcode"></i>
                         <span>Scan Attendance</span>
                     </button>
-                    <button class="action-btn secondary" id="quick-time-btn">
+                    <button class="action-btn action-btn--secondary" id="quick-time-btn">
                         <i class="fas fa-clock"></i>
                         <span>Quick Time</span>
                     </button>
@@ -174,73 +176,82 @@ export class Dashboard {
 
             <!-- Stats Grid -->
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-left">
-                        <div class="stat-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>Total Hours</h3>
-                            <div class="stat-subtitle">This month</div>
-                        </div>
-                    </div>
-                    <div class="stat-right">
-                        <div class="stat-trend" id="total-trend">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>+2.5h</span>
-                        </div>
-                        <div class="stat-value" id="total-hours">0.0</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-left">
-                        <div class="stat-icon">
-                            <i class="fas fa-calendar-week"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>Weekly Hours</h3>
-                            <div class="stat-subtitle">This week</div>
-                        </div>
-                    </div>
-                    <div class="stat-right">
-                        <div class="stat-trend" id="weekly-trend">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>+5.0h</span>
-                        </div>
-                        <div class="stat-value" id="weekly-hours">0.0</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-left">
-                        <div class="stat-icon">
-                            <i class="fas fa-calendar-day"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>Today's Hours</h3>
-                            <div class="stat-subtitle" id="today-status">Ready to start</div>
-                        </div>
-                    </div>
-                    <div class="stat-right">
-                        <div class="stat-trend" id="daily-trend">
-                            <i class="fas fa-clock"></i>
-                            <span id="time-status">Not started</span>
-                        </div>
-                        <div class="stat-value" id="daily-hours">0.0</div>
-                    </div>
-                </div>
-
-                <div class="stat-card wide">
+                <div class="stat-card stat-card--monthly">
                     <div class="stat-content">
-                        <h3>Weekly Progress</h3>
+                        <div class="stat-header">
+                            <div class="stat-icon stat-icon--monthly">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 class="stat-title">Total Hours</h3>
+                                <div class="stat-subtitle">This month</div>
+                            </div>
+                        </div>
+                        <div class="stat-footer">
+                            <div class="stat-value" id="total-hours">0.0</div>
+                            <div class="stat-trend stat-trend--positive" id="total-trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+2.5h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-card--weekly">
+                    <div class="stat-content">
+                        <div class="stat-header">
+                            <div class="stat-icon stat-icon--weekly">
+                                <i class="fas fa-calendar-week"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 class="stat-title">Weekly Hours</h3>
+                                <div class="stat-subtitle">This week</div>
+                            </div>
+                        </div>
+                        <div class="stat-footer">
+                            <div class="stat-value" id="weekly-hours">0.0</div>
+                            <div class="stat-trend stat-trend--positive" id="weekly-trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+5.0h</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-card--daily">
+                    <div class="stat-content">
+                        <div class="stat-header">
+                            <div class="stat-icon stat-icon--daily">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 class="stat-title">Today's Hours</h3>
+                                <div class="stat-subtitle" id="today-status">Ready to start</div>
+                            </div>
+                        </div>
+                        <div class="stat-footer">
+                            <div class="stat-value" id="daily-hours">0.0</div>
+                            <div class="stat-trend stat-trend--neutral" id="daily-trend">
+                                <i class="fas fa-clock"></i>
+                                <span id="time-status">Not started</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-card--progress">
+                    <div class="stat-content">
+                        <div class="progress-header">
+                            <h3 class="stat-title">Weekly Progress</h3>
+                            <div class="progress-percentage" id="progress-percentage">0%</div>
+                        </div>
                         <div class="progress-container">
                             <div class="progress-bar">
                                 <div class="progress-fill" id="weekly-progress-bar" style="width: 0%"></div>
                             </div>
                             <div class="progress-info">
                                 <span class="progress-label" id="progress-label">0 / 40 hours</span>
-                                <span class="progress-percentage" id="progress-percentage">0%</span>
+                                <span class="progress-target">Target: 40h/week</span>
                             </div>
                         </div>
                     </div>
@@ -251,9 +262,12 @@ export class Dashboard {
             <div class="charts-section">
                 <div class="chart-card">
                     <div class="chart-header">
-                        <h3>Weekly Hours Trend</h3>
+                        <div class="chart-title">
+                            <h3 class="section-title">Hours Trend</h3>
+                            <p class="section-subtitle">Track your daily attendance patterns</p>
+                        </div>
                         <div class="chart-controls">
-                            <button class="chart-btn active" data-period="week">Week</button>
+                            <button class="chart-btn chart-btn--active" data-period="week">Week</button>
                             <button class="chart-btn" data-period="month">Month</button>
                         </div>
                     </div>
@@ -266,7 +280,10 @@ export class Dashboard {
             <!-- Recent Activity -->
             <div class="activity-section">
                 <div class="activity-header">
-                    <h3>Recent Activity</h3>
+                    <div class="activity-title">
+                        <h3 class="section-title">Recent Activity</h3>
+                        <p class="section-subtitle">Your latest attendance records</p>
+                    </div>
                     <button class="view-all-btn" id="view-all-activity">
                         <span>View All</span>
                         <i class="fas fa-arrow-right"></i>
@@ -274,8 +291,13 @@ export class Dashboard {
                 </div>
                 <div class="activity-list" id="recent-activity">
                     <div class="activity-placeholder">
-                        <i class="fas fa-clock"></i>
-                        <p>No recent activity. Start tracking your attendance!</p>
+                        <div class="placeholder-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="placeholder-content">
+                            <h4 class="placeholder-title">No recent activity</h4>
+                            <p class="placeholder-text">Start tracking your attendance to see your activity here!</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -360,8 +382,8 @@ export class Dashboard {
         // Chart period buttons
         document.querySelectorAll('.chart-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
+                document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('chart-btn--active'));
+                e.target.classList.add('chart-btn--active');
                 this.renderCharts(e.target.dataset.period);
             });
         });

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff7a45">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AG&P Attendance">
+    <meta name="description" content="Professional intern attendance tracking and management system">
+    <title>AGSP Intern Attendance System - Login</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="../config/manifest.json">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/icons/icon-192x192.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../src/styles/variables.css">
+    <link rel="stylesheet" href="../src/styles/modern-ui.css">
+    <link rel="stylesheet" href="../src/styles/mobile-optimized.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <img src="../assets/images/AGP-Logo.png" alt="AG&P Logo">
+        </div>
+        <div class="login-card">
+            <div class="login-content">
+                <h1>Login</h1>
+                <form id="login-form">
+                    <div class="input-field">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="input-field">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" required>
+                    </div>
+                    <div id="login-error" style="color: #e74c3c; margin-bottom: 15px; display: none;"></div>
+                    <button type="submit" class="login-btn">Login</button>
+                    <div class="login-footer">
+                        <p><a href="#">Forgot Password?</a></p>
+                        <p style="margin-top: 30px;"><a href="register.html">Create Your Account</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <!-- Security Services -->
+    <script src="../src/services/SecurityService.js"></script>
+    <script src="../src/utils/PasswordMigration.js"></script>
+
+    <!-- User Database -->
+    <script src="../modules/user-management/users-database.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('login-form');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const errorDiv = document.getElementById('login-error');
+
+            // Add placeholders for better UX
+            emailInput.placeholder = 'Enter your email address';
+            passwordInput.placeholder = 'Enter password';
+
+            // Show available test accounts
+            showTestAccounts();
+
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+
+                // Clear previous errors
+                hideError();
+
+                // Validate inputs
+                if (!email || !password) {
+                    showError('Please enter both email and password');
+                    return;
+                }
+
+                // Validate email format
+                if (!isValidEmail(email)) {
+                    showError('Please enter a valid email address');
+                    return;
+                }
+
+                // Check if account is locked before attempting login
+                if (window.securityService && window.securityService.isAccountLocked(email)) {
+                    showError('Account temporarily locked due to multiple failed login attempts. Please try again later.');
+                    return;
+                }
+
+                // Show loading state
+                const loginBtn = document.querySelector('.login-btn');
+                const originalText = loginBtn.innerHTML;
+                loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+                loginBtn.disabled = true;
+
+                try {
+                    // Simulate network delay for realistic experience
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                    // Authenticate with user database using email
+                    const authResult = await window.userDatabase.authenticateByEmail(email, password);
+
+                    if (authResult.success) {
+                        // Create secure session
+                        let session = null;
+                        if (window.securityService) {
+                            session = window.securityService.createSession(authResult.user);
+                        }
+
+                        // Store user session (legacy support)
+                        localStorage.setItem('agp_current_user', JSON.stringify(authResult.user));
+                        localStorage.setItem('agp_login_time', new Date().toISOString());
+
+                        // Show success message
+                        loginBtn.innerHTML = '<i class="fas fa-check"></i> Login Successful!';
+                        loginBtn.style.backgroundColor = '#2ecc71';
+
+                        // Redirect to dashboard
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    } else {
+                        // Show error with additional context for locked accounts
+                        let errorMessage = authResult.message;
+                        if (authResult.locked) {
+                            errorMessage += ' Please wait 15 minutes before trying again.';
+                        }
+                        showError(errorMessage);
+
+                        // Reset button
+                        loginBtn.innerHTML = originalText;
+                        loginBtn.disabled = false;
+                        loginBtn.style.backgroundColor = '#ff7a45';
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    showError('An error occurred during login. Please try again.');
+
+                    // Reset button
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                    loginBtn.style.backgroundColor = '#ff7a45';
+                }
+            });
+
+            function showError(message) {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+
+            function hideError() {
+                errorDiv.style.display = 'none';
+            }
+
+            function isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            function showTestAccounts() {
+                // Add test account info below the form
+                const testAccountsDiv = document.createElement('div');
+                testAccountsDiv.className = 'test-accounts';
+                testAccountsDiv.innerHTML = `
+                    <div class="test-accounts-header">
+                        <h3>Test Accounts</h3>
+                        <p>Use these accounts for testing:</p>
+                    </div>
+                    <div class="test-account-list">
+                        <div class="test-account" onclick="fillLogin('devmark@agp.com', 'try465')">
+                            <div class="account-role developer">DEV</div>
+                            <div class="account-info">
+                                <strong>devmark@agp.com</strong> / try465
+                                <small>Full system access</small>
+                            </div>
+                        </div>
+                        <div class="test-account" onclick="fillLogin('adminmark@agp.com', 'try123')">
+                            <div class="account-role admin">ADMIN</div>
+                            <div class="account-info">
+                                <strong>adminmark@agp.com</strong> / try123
+                                <small>User management</small>
+                            </div>
+                        </div>
+                        <div class="test-account" onclick="fillLogin('usermark@agp.com', 'try123')">
+                            <div class="account-role user">USER</div>
+                            <div class="account-info">
+                                <strong>usermark@agp.com</strong> / try123
+                                <small>Basic access</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.querySelector('.login-content').appendChild(testAccountsDiv);
+            }
+
+            // Global function to fill login form
+            window.fillLogin = function(email, password) {
+                emailInput.value = email;
+                passwordInput.value = password;
+                hideError();
+            };
+        });
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1e2430;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            background-image: linear-gradient(135deg,
+                #ff7a45 0%,
+                #ff7a45 60%,
+                #c17a50 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            height: 60px;
+        }
+
+        .logo img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .login-container::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40%;
+            height: 100%;
+            background-color: #2e3540;
+            clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
+            z-index: 1;
+        }
+
+        .login-card {
+            width: 400px;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-right: 40px;
+        }
+
+        .login-content {
+            width: 100%;
+            padding: 40px;
+        }
+
+        .login-content h1 {
+            font-size: 32px;
+            font-weight: 500;
+            margin-bottom: 40px;
+            color: #ffffff;
+        }
+
+        .input-field {
+            position: relative;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            border: none;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #333333;
+            font-size: 16px;
+        }
+
+        .input-field input:focus {
+            outline: none;
+        }
+
+        .input-field i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777777;
+            font-size: 18px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #ff7a45;
+            color: #ffffff;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            background-color: #e05a25;
+        }
+
+        .login-footer {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .login-footer a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .login-footer a:hover {
+            color: #ff7a45;
+        }
+
+        /* Test Accounts Styles */
+        .test-accounts {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .test-accounts-header h3 {
+            color: #ff7a45;
+            margin-bottom: 8px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .test-accounts-header p {
+            color: #a0a0a0;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .test-account-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .test-account {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .test-account:hover {
+            background: rgba(255, 122, 69, 0.1);
+            border-color: #ff7a45;
+            transform: translateY(-1px);
+        }
+
+        .account-role {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 12px;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .account-role.developer {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .account-role.admin {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .account-role.user {
+            background: #3498db;
+            color: white;
+        }
+
+        .account-info {
+            flex: 1;
+        }
+
+        .account-info strong {
+            color: #ffffff;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .account-info small {
+            color: #a0a0a0;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .login-container::after {
+                width: 100%;
+                clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            }
+
+            .logo {
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                height: 50px;
+            }
+
+            .login-card {
+                width: 90%;
+                padding: 0;
+            }
+        }
+    </style>
+</body>
+</html>

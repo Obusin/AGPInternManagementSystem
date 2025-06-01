@@ -11,23 +11,23 @@
     <title>AGSP Intern Attendance System - Login</title>
 
     <!-- PWA Manifest -->
-    <link rel="manifest" href="../config/manifest.json">
+    <link rel="manifest" href="/config/manifest.json">
 
     <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="../assets/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/icon-192x192.png">
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../src/styles/variables.css">
-    <link rel="stylesheet" href="../src/styles/modern-ui.css">
-    <link rel="stylesheet" href="../src/styles/mobile-optimized.css">
+    <link rel="stylesheet" href="/src/styles/variables.css">
+    <link rel="stylesheet" href="/src/styles/modern-ui.css">
+    <link rel="stylesheet" href="/src/styles/mobile-optimized.css">
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
-            <img src="../assets/images/AGP-Logo.png" alt="AG&P Logo">
+            <img src="/assets/images/AGP-Logo.png" alt="AG&P Logo">
         </div>
         <div class="login-card">
             <div class="login-content">
@@ -56,11 +56,11 @@
     <div class="notification-container" id="notification-container"></div>
 
     <!-- Security Services -->
-    <script src="../src/services/SecurityService.js"></script>
-    <script src="../src/utils/PasswordMigration.js"></script>
+    <script src="/src/services/SecurityService.js"></script>
+    <script src="/src/utils/PasswordMigration.js"></script>
 
     <!-- User Database -->
-    <script src="../modules/user-management/users-database.js"></script>
+    <script src="/modules/user-management/users-database.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -133,7 +133,7 @@
 
                         // Redirect to dashboard
                         setTimeout(() => {
-                            window.location.href = 'index.html';
+                            window.location.href = '/dashboard';
                         }, 1000);
                     } else {
                         // Show error with additional context for locked accounts

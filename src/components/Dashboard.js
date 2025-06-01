@@ -1102,6 +1102,12 @@ export class Dashboard {
         const validUntil = new Date(qrData.valid_until || qrData.validUntil);
         const isValid = validUntil > now;
 
+        // Determine current time tracking status
+        const isCurrentlyTimedIn = this.app.state.isTimedIn;
+        const currentAction = isCurrentlyTimedIn ? 'TIME OUT' : 'TIME IN';
+        const actionIcon = isCurrentlyTimedIn ? '🔴' : '🟢';
+        const actionColor = isCurrentlyTimedIn ? '#ff4444' : '#00ff00';
+
         status.innerHTML = '<div class="status-message">🎉 AG&P Attendance QR Detected!</div>';
 
         resultsDiv.innerHTML = `
@@ -1111,11 +1117,16 @@ export class Dashboard {
             <p><strong>📧 Email:</strong> ${qrData.email}</p>
             <p><strong>🏢 Department:</strong> ${qrData.department}</p>
             <p><strong>💼 Position:</strong> ${qrData.position}</p>
-            <p><strong>✅ Status:</strong> <span style="color: ${isValid ? '#00ff00' : '#ff4444'}">${isValid ? 'VALID' : 'EXPIRED'}</span></p>
+            <p><strong>✅ QR Status:</strong> <span style="color: ${isValid ? '#00ff00' : '#ff4444'}">${isValid ? 'VALID' : 'EXPIRED'}</span></p>
+
+            <div style="margin: 15px 0; padding: 10px; background: rgba(255, 122, 69, 0.1); border-radius: 5px;">
+                <p><strong>⏰ Current Status:</strong> <span style="color: ${actionColor}">${isCurrentlyTimedIn ? 'TIMED IN' : 'TIMED OUT'}</span></p>
+                <p><strong>🎯 Next Action:</strong> <span style="color: ${actionColor}">${currentAction}</span></p>
+            </div>
 
             <div style="margin-top: 20px;">
-                <button class="qr-control-btn qr-control-btn--primary" onclick="dashboard.recordQRAttendance('${qrData.userId}', '${qrData.name}')">
-                    ⏰ RECORD ATTENDANCE
+                <button class="qr-control-btn qr-control-btn--primary" onclick="dashboard.recordQRAttendance('${qrData.userId}', '${qrData.name}')" style="background: ${actionColor};">
+                    ${actionIcon} ${currentAction}
                 </button>
             </div>
         `;
@@ -1172,26 +1183,53 @@ export class Dashboard {
         const now = new Date();
         const timeString = now.toLocaleString();
 
+        // Determine action based on current state
+        const isCurrentlyTimedIn = this.app.state.isTimedIn;
+        const action = isCurrentlyTimedIn ? 'TIME OUT' : 'TIME IN';
+
         // Record attendance using the app's time tracking
-        if (this.app.state.isTimedIn) {
+        if (isCurrentlyTimedIn) {
             this.app.timeOut();
         } else {
             this.app.timeIn();
         }
 
-        alert(`✅ ATTENDANCE RECORDED!\n\nUser: ${userName}\nID: ${userId}\nTime: ${timeString}`);
+        // Show success message with action
+        const message = `✅ ${action} SUCCESSFUL!\n\nUser: ${userName}\nID: ${userId}\nTime: ${timeString}\nAction: ${action}`;
+
+        // Update the QR results to show success
+        const resultsDiv = document.getElementById('qr-scan-results');
+        if (resultsDiv) {
+            resultsDiv.innerHTML = `
+                <h3>✅ ${action} RECORDED</h3>
+                <p><strong>👤 User:</strong> ${userName}</p>
+                <p><strong>🆔 ID:</strong> ${userId}</p>
+                <p><strong>⏰ Time:</strong> ${timeString}</p>
+                <p><strong>🎯 Action:</strong> <span style="color: #00ff00">${action}</span></p>
+                <div style="margin-top: 15px; padding: 10px; background: rgba(0, 255, 0, 0.1); border-radius: 5px;">
+                    <strong>✅ Attendance successfully recorded!</strong>
+                </div>
+            `;
+        }
 
         console.log('QR Attendance recorded:', {
             userId: userId,
             userName: userName,
             timestamp: now.toISOString(),
+            action: action,
             type: 'qr_scan'
         });
 
-        // Close scanner after recording
+        // Play success sound
+        this.playQRSuccessSound();
+
+        // Close scanner after delay
         setTimeout(() => {
             this.closeQRScanner();
-        }, 2000);
+
+            // Refresh dashboard to show updated stats
+            this.refresh();
+        }, 3000);
     }
 
     /**

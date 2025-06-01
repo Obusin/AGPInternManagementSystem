@@ -401,6 +401,21 @@
 
     <!-- Authentication & Loading Screen Script -->
     <script>
+        // Add error handler for script loading
+        window.addEventListener('error', (e) => {
+            console.error('Script loading error:', e.filename, e.message);
+            if (e.filename && e.filename.includes('.js')) {
+                document.getElementById('loading-screen').innerHTML = `
+                    <div class="loading-content">
+                        <h3 style="color: #e74c3c;">Loading Error</h3>
+                        <p>Failed to load: ${e.filename}</p>
+                        <p>Error: ${e.message}</p>
+                        <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #ff7a45; color: white; border: none; border-radius: 5px; cursor: pointer;">Reload Page</button>
+                    </div>
+                `;
+            }
+        });
+
         // Check authentication and load user data
         window.addEventListener('load', async () => {
             try {

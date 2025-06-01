@@ -419,58 +419,33 @@
         // Check authentication and load user data
         window.addEventListener('load', async () => {
             try {
-                // First, run password migration if needed
-                if (window.passwordMigration && !window.passwordMigration.isMigrationCompleted()) {
-                    console.log('Running password migration...');
-                    const migrationResult = await window.passwordMigration.runMigrationWithUI();
-                    if (!migrationResult.success) {
-                        console.error('Password migration failed:', migrationResult.message);
-                    }
+                console.log('Dashboard loading - checking authentication...');
+
+                // Simple session check - just look for user data
+                const currentUserData = localStorage.getItem('agp_current_user');
+                const loginTime = localStorage.getItem('agp_login_time');
+
+                console.log('User data found:', !!currentUserData);
+                console.log('Login time found:', !!loginTime);
+
+                if (!currentUserData || !loginTime) {
+                    console.log('No session found, redirecting to login');
+                    window.location.href = 'login.html';
+                    return;
                 }
 
-                // Validate session using new security service
-                let sessionValid = false;
-                let user = null;
+                const user = JSON.parse(currentUserData);
+                console.log('User loaded:', user.name, user.role);
 
-                if (window.securityService) {
-                    const sessionValidation = window.securityService.validateSession();
-                    if (sessionValidation.valid) {
-                        sessionValid = true;
-                        // Get user from database using session info
-                        const users = window.userDatabase.getAllUsers();
-                        user = users.find(u => u.id === sessionValidation.session.userId);
-                    }
-                }
+                // Check session expiration (24 hours for now)
+                const loginDate = new Date(loginTime);
+                const now = new Date();
+                const sessionDuration = (now - loginDate) / (1000 * 60 * 60); // hours
 
-                // Fallback to legacy session validation
-                if (!sessionValid) {
-                    const currentUserData = localStorage.getItem('agp_current_user');
-                    const loginTime = localStorage.getItem('agp_login_time');
-
-                    if (!currentUserData || !loginTime) {
-                        window.location.href = 'login.html';
-                        return;
-                    }
-
-                    user = JSON.parse(currentUserData);
-                    const loginDate = new Date(loginTime);
-                    const now = new Date();
-                    const sessionDuration = (now - loginDate) / (1000 * 60 * 60); // hours
-
-                    // Check if session is expired (8 hours with new security)
-                    if (sessionDuration > 8) {
-                        if (window.securityService) {
-                            window.securityService.clearSession();
-                        } else {
-                            localStorage.removeItem('agp_current_user');
-                            localStorage.removeItem('agp_login_time');
-                        }
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                }
-
-                if (!user) {
+                if (sessionDuration > 24) {
+                    console.log('Session expired, redirecting to login');
+                    localStorage.removeItem('agp_current_user');
+                    localStorage.removeItem('agp_login_time');
                     window.location.href = 'login.html';
                     return;
                 }

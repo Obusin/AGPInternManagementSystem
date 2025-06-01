@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple QR Generator for Mark Ilagan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: #2e3540;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .qr-display {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .qr-display img {
+            max-width: 300px;
+            display: block;
+        }
+        .user-info {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .user-info h3 {
+            color: #ff7a45;
+            margin-top: 0;
+        }
+        .user-info p {
+            margin: 8px 0;
+        }
+        .btn {
+            padding: 12px 24px;
+            margin: 10px;
+            background: #ff7a45;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #e05a25;
+        }
+        .btn-download {
+            background: #28a745;
+        }
+        .btn-download:hover {
+            background: #218838;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #28a745;
+            color: white;
+        }
+        .status.error {
+            background: #dc3545;
+            color: white;
+        }
+        .status.info {
+            background: #17a2b8;
+            color: white;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: left;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .qr-actions {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 QR Code Generator for Mark Ilagan</h1>
+    <p>Generate and download a QR code for testing the attendance system</p>
+
+    <div class="container">
+        <div class="user-info">
+            <h3>👤 User Information</h3>
+            <p><strong>Name:</strong> Mark Ilagan</p>
+            <p><strong>Email:</strong> mark.ilagan@agp.com</p>
+            <p><strong>Department:</strong> IT</p>
+            <p><strong>Position:</strong> Software Developer</p>
+            <p><strong>Role:</strong> User</p>
+            <p><strong>Employee ID:</strong> EMP_MARK_001</p>
+        </div>
+
+        <button class="btn" onclick="generateQRCode()">📱 Generate QR Code</button>
+        
+        <div id="status-area"></div>
+        <div id="qr-display-area"></div>
+    </div>
+
+    <!-- QR Code Library with fallbacks -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        // Fallback loading if primary CDN fails
+        if (typeof QRCode === 'undefined') {
+            console.log('🔄 Primary CDN failed, trying alternative...');
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js';
+            script.onerror = () => {
+                console.log('🔄 Alternative CDN failed, trying another...');
+                const script2 = document.createElement('script');
+                script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+                document.head.appendChild(script2);
+            };
+            document.head.appendChild(script);
+        }
+    </script>
+
+    <script>
+        // Mark Ilagan's user data
+        const markIlaganData = {
+            version: '2.0',
+            type: 'AGP_ATTENDANCE',
+            userId: 'EMP_MARK_001',
+            employeeId: 'EMP_MARK_001',
+            name: 'Mark Ilagan',
+            email: 'mark.ilagan@agp.com',
+            department: 'IT',
+            position: 'Software Developer',
+            role: 'user',
+            generatedAt: new Date().toISOString(),
+            validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year
+            issuer: 'AG&P_ATTENDANCE_SYSTEM',
+            signature: generateSignature('EMP_MARK_001', 'mark.ilagan@agp.com'),
+            qrId: 'QR_MARK_' + Date.now()
+        };
+
+        let generatedQRCode = null;
+
+        async function generateQRCode() {
+            const statusArea = document.getElementById('status-area');
+            const qrDisplayArea = document.getElementById('qr-display-area');
+            
+            try {
+                statusArea.innerHTML = '<div class="status info">🔄 Generating QR code for Mark Ilagan...</div>';
+                
+                // Check if QRCode library is loaded
+                if (typeof QRCode === 'undefined') {
+                    throw new Error('QRCode library not loaded. Please refresh the page.');
+                }
+                
+                // Convert data to JSON string
+                const qrDataString = JSON.stringify(markIlaganData);
+                console.log('QR Data:', markIlaganData);
+                console.log('QR String Length:', qrDataString.length);
+                
+                // Generate QR code
+                const qrCodeDataURL = await QRCode.toDataURL(qrDataString, {
+                    width: 300,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    },
+                    errorCorrectionLevel: 'M'
+                });
+                
+                generatedQRCode = qrCodeDataURL;
+                
+                // Display success message
+                statusArea.innerHTML = `
+                    <div class="status success">✅ QR Code generated successfully!</div>
+                    <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+                    <p><strong>Valid Until:</strong> ${new Date(markIlaganData.validUntil).toLocaleDateString()}</p>
+                    <p><strong>Data Size:</strong> ${qrDataString.length} characters</p>
+                `;
+                
+                // Display QR code
+                qrDisplayArea.innerHTML = `
+                    <div class="qr-display">
+                        <img src="${qrCodeDataURL}" alt="Mark Ilagan QR Code" id="qr-image">
+                    </div>
+                    <div class="qr-actions">
+                        <button class="btn btn-download" onclick="downloadQRCode()">
+                            📥 Download QR Code
+                        </button>
+                        <button class="btn" onclick="showQRData()">
+                            📋 Show QR Data
+                        </button>
+                        <button class="btn" onclick="testQRReading()">
+                            🔍 Test QR Reading
+                        </button>
+                    </div>
+                    <div id="qr-data-area"></div>
+                `;
+                
+            } catch (error) {
+                console.error('QR Generation Error:', error);
+                statusArea.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function downloadQRCode() {
+            if (!generatedQRCode) {
+                alert('Please generate a QR code first!');
+                return;
+            }
+            
+            try {
+                const link = document.createElement('a');
+                link.download = `AGP-QRCode-Mark-Ilagan-${Date.now()}.png`;
+                link.href = generatedQRCode;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success message
+                const statusArea = document.getElementById('status-area');
+                statusArea.innerHTML += '<div class="status success">📥 QR Code downloaded successfully!</div>';
+                
+            } catch (error) {
+                alert('Failed to download QR code: ' + error.message);
+            }
+        }
+
+        function showQRData() {
+            const qrDataArea = document.getElementById('qr-data-area');
+            
+            if (qrDataArea.innerHTML.includes('QR Code Data')) {
+                qrDataArea.innerHTML = '';
+                return;
+            }
+            
+            qrDataArea.innerHTML = `
+                <div style="margin-top: 20px;">
+                    <h4>📋 QR Code Data</h4>
+                    <pre>${JSON.stringify(markIlaganData, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        async function testQRReading() {
+            if (!generatedQRCode) {
+                alert('Please generate a QR code first!');
+                return;
+            }
+            
+            try {
+                // Load jsQR library if not already loaded
+                if (typeof jsQR === 'undefined') {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+                    document.head.appendChild(script);
+                    
+                    // Wait for library to load
+                    await new Promise((resolve) => {
+                        script.onload = resolve;
+                        setTimeout(resolve, 3000); // Timeout after 3 seconds
+                    });
+                }
+                
+                if (typeof jsQR === 'undefined') {
+                    throw new Error('jsQR library failed to load');
+                }
+                
+                // Create canvas and read QR code
+                const img = document.getElementById('qr-image');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (code) {
+                    const scannedData = JSON.parse(code.data);
+                    const qrDataArea = document.getElementById('qr-data-area');
+                    qrDataArea.innerHTML = `
+                        <div style="margin-top: 20px;">
+                            <div class="status success">✅ QR Code reading test successful!</div>
+                            <h4>🔍 Scanned Data</h4>
+                            <p><strong>Name:</strong> ${scannedData.name}</p>
+                            <p><strong>Employee ID:</strong> ${scannedData.userId}</p>
+                            <p><strong>Department:</strong> ${scannedData.department}</p>
+                            <p><strong>Valid:</strong> ${scannedData.validUntil > new Date().toISOString() ? '✅ Yes' : '❌ Expired'}</p>
+                            <details>
+                                <summary>📋 Full Scanned Data</summary>
+                                <pre>${JSON.stringify(scannedData, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Could not read QR code');
+                }
+                
+            } catch (error) {
+                console.error('QR Reading Error:', error);
+                const qrDataArea = document.getElementById('qr-data-area');
+                qrDataArea.innerHTML = `
+                    <div style="margin-top: 20px;">
+                        <div class="status error">❌ QR Reading failed: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function generateSignature(userId, email) {
+            // Simple hash function for signature
+            const data = `${userId}-${email}-${Date.now()}-AGP_SECRET`;
+            let hash = 0;
+            for (let i = 0; i < data.length; i++) {
+                const char = data.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(16);
+        }
+
+        // Auto-generate QR code when page loads
+        window.addEventListener('load', () => {
+            console.log('🔄 Page loaded, waiting for QRCode library...');
+
+            // Wait for QRCode library to load
+            function waitForQRCode() {
+                if (typeof QRCode !== 'undefined') {
+                    console.log('✅ QRCode library loaded, generating QR code...');
+                    generateQRCode();
+                } else {
+                    console.log('⏳ Still waiting for QRCode library...');
+                    setTimeout(waitForQRCode, 500);
+                }
+            }
+
+            // Start checking after a short delay
+            setTimeout(waitForQRCode, 1000);
+        });
+    </script>
+</body>
+</html>

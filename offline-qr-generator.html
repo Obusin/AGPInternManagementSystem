@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline QR Generator - Mark Ilagan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: #2e3540;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .user-info {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .user-info h3 {
+            color: #ff7a45;
+            margin-top: 0;
+        }
+        .user-info p {
+            margin: 8px 0;
+        }
+        .btn {
+            padding: 12px 24px;
+            margin: 10px;
+            background: #ff7a45;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #e05a25;
+        }
+        .btn-download {
+            background: #28a745;
+        }
+        .btn-download:hover {
+            background: #218838;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #28a745;
+            color: white;
+        }
+        .status.error {
+            background: #dc3545;
+            color: white;
+        }
+        .status.info {
+            background: #17a2b8;
+            color: white;
+        }
+        #qr-canvas {
+            background: white;
+            margin: 20px auto;
+            border-radius: 8px;
+            padding: 20px;
+            display: none;
+        }
+        .qr-actions {
+            margin: 20px 0;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: left;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 Offline QR Generator - Mark Ilagan</h1>
+    <p>Generate QR code without external dependencies</p>
+
+    <div class="container">
+        <div class="user-info">
+            <h3>👤 User Information</h3>
+            <p><strong>Name:</strong> Mark Ilagan</p>
+            <p><strong>Email:</strong> mark.ilagan@agp.com</p>
+            <p><strong>Department:</strong> IT</p>
+            <p><strong>Position:</strong> Software Developer</p>
+            <p><strong>Role:</strong> User</p>
+            <p><strong>Employee ID:</strong> EMP_MARK_001</p>
+        </div>
+
+        <button class="btn" onclick="generateSimpleQR()">📱 Generate Simple QR</button>
+        <button class="btn" onclick="generateDataURL()">📋 Generate Data URL</button>
+        
+        <div id="status-area"></div>
+        
+        <canvas id="qr-canvas" width="300" height="300"></canvas>
+        
+        <div id="qr-actions" class="qr-actions" style="display: none;">
+            <button class="btn btn-download" onclick="downloadQR()">📥 Download QR Code</button>
+            <button class="btn" onclick="showData()">📋 Show Data</button>
+        </div>
+        
+        <div id="data-area"></div>
+    </div>
+
+    <script>
+        // Mark Ilagan's data
+        const markData = {
+            version: '2.0',
+            type: 'AGP_ATTENDANCE',
+            userId: 'EMP_MARK_001',
+            name: 'Mark Ilagan',
+            email: 'mark.ilagan@agp.com',
+            department: 'IT',
+            position: 'Software Developer',
+            role: 'user',
+            generatedAt: new Date().toISOString(),
+            validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            issuer: 'AG&P_ATTENDANCE_SYSTEM',
+            signature: 'MARK_' + Date.now().toString(36)
+        };
+
+        let currentQRData = null;
+
+        function generateSimpleQR() {
+            const statusArea = document.getElementById('status-area');
+            const canvas = document.getElementById('qr-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            try {
+                statusArea.innerHTML = '<div class="status info">🔄 Generating simple QR pattern...</div>';
+                
+                // Create a simple visual pattern representing the data
+                const dataString = JSON.stringify(markData);
+                currentQRData = dataString;
+                
+                // Clear canvas
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, 300, 300);
+                
+                // Create a simple grid pattern based on data
+                ctx.fillStyle = 'black';
+                const gridSize = 10;
+                const cols = Math.floor(300 / gridSize);
+                const rows = Math.floor(300 / gridSize);
+                
+                // Use data hash to create pattern
+                let hash = 0;
+                for (let i = 0; i < dataString.length; i++) {
+                    hash = ((hash << 5) - hash + dataString.charCodeAt(i)) & 0xffffffff;
+                }
+                
+                // Create pattern
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        const index = y * cols + x;
+                        if ((hash + index) % 3 === 0) {
+                            ctx.fillRect(x * gridSize, y * gridSize, gridSize, gridSize);
+                        }
+                    }
+                }
+                
+                // Add corner markers
+                drawCornerMarker(ctx, 0, 0);
+                drawCornerMarker(ctx, 240, 0);
+                drawCornerMarker(ctx, 0, 240);
+                
+                // Add center marker
+                ctx.fillStyle = 'black';
+                ctx.fillRect(140, 140, 20, 20);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(145, 145, 10, 10);
+                
+                canvas.style.display = 'block';
+                document.getElementById('qr-actions').style.display = 'block';
+                
+                statusArea.innerHTML = `
+                    <div class="status success">✅ Simple QR pattern generated!</div>
+                    <p><strong>Note:</strong> This is a visual representation. For actual QR scanning, use the Data URL method.</p>
+                `;
+                
+            } catch (error) {
+                statusArea.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function drawCornerMarker(ctx, x, y) {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(x, y, 60, 60);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(x + 10, y + 10, 40, 40);
+            ctx.fillStyle = 'black';
+            ctx.fillRect(x + 20, y + 20, 20, 20);
+        }
+
+        function generateDataURL() {
+            const statusArea = document.getElementById('status-area');
+            const dataArea = document.getElementById('data-area');
+            
+            try {
+                const dataString = JSON.stringify(markData);
+                currentQRData = dataString;
+                
+                // Create a data URL that can be used as QR code data
+                const qrDataURL = `data:text/plain;charset=utf-8,${encodeURIComponent(dataString)}`;
+                
+                statusArea.innerHTML = '<div class="status success">✅ QR Data URL generated!</div>';
+                
+                dataArea.innerHTML = `
+                    <div style="margin-top: 20px;">
+                        <h4>📋 QR Code Data</h4>
+                        <p><strong>Data Length:</strong> ${dataString.length} characters</p>
+                        <p><strong>Data URL:</strong></p>
+                        <textarea style="width: 100%; height: 100px; background: #1a1a1a; color: white; border: 1px solid #3a4553; border-radius: 4px; padding: 10px;" readonly>${qrDataURL}</textarea>
+                        <br><br>
+                        <button class="btn" onclick="copyToClipboard('${qrDataURL.replace(/'/g, "\\'")}')">📋 Copy Data URL</button>
+                        <button class="btn" onclick="saveAsTextFile()">💾 Save as Text File</button>
+                        <details style="margin-top: 15px;">
+                            <summary>📋 Raw JSON Data</summary>
+                            <pre>${JSON.stringify(markData, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+                
+            } catch (error) {
+                statusArea.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function downloadQR() {
+            const canvas = document.getElementById('qr-canvas');
+            
+            try {
+                const link = document.createElement('a');
+                link.download = `AGP-QRPattern-Mark-Ilagan-${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                const statusArea = document.getElementById('status-area');
+                statusArea.innerHTML += '<div class="status success">📥 QR pattern downloaded!</div>';
+                
+            } catch (error) {
+                alert('Failed to download: ' + error.message);
+            }
+        }
+
+        function showData() {
+            const dataArea = document.getElementById('data-area');
+            
+            if (dataArea.innerHTML.includes('Raw Data')) {
+                dataArea.innerHTML = '';
+                return;
+            }
+            
+            dataArea.innerHTML = `
+                <div style="margin-top: 20px;">
+                    <h4>📋 Raw Data</h4>
+                    <pre>${JSON.stringify(markData, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Data URL copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Data URL copied to clipboard!');
+            });
+        }
+
+        function saveAsTextFile() {
+            const dataString = JSON.stringify(markData, null, 2);
+            const blob = new Blob([dataString], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.download = `AGP-QRData-Mark-Ilagan-${Date.now()}.txt`;
+            link.href = URL.createObjectURL(blob);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        // Auto-generate when page loads
+        window.addEventListener('load', () => {
+            console.log('🔄 Offline QR Generator loaded');
+            setTimeout(() => {
+                generateSimpleQR();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

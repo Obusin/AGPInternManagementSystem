@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Library Loading Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #2e3540;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #ff7a45;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #e05a25;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #28a745; }
+        .error { background: #dc3545; }
+        .info { background: #17a2b8; }
+        .warning { background: #ffc107; color: #000; }
+        #qr-display img {
+            max-width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 QR Library Loading Test</h1>
+    
+    <div class="test-section">
+        <h2>📚 Library Status Check</h2>
+        <button onclick="checkLibraries()">Check All Libraries</button>
+        <div id="library-status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎯 Basic QR Generation Test</h2>
+        <button onclick="testBasicQR()">Generate Simple QR</button>
+        <div id="basic-qr-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Advanced QR Generation Test</h2>
+        <button onclick="testAdvancedQR()">Generate Complex QR</button>
+        <div id="advanced-qr-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📱 QR Scanning Test</h2>
+        <button onclick="testQRScanning()">Test QR Reading</button>
+        <div id="scanning-result"></div>
+    </div>
+
+    <!-- Method 1: CDN Loading (Primary) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    
+    <!-- Method 2: Alternative CDN (Fallback) -->
+    <script>
+        // Fallback loading if primary CDN fails
+        if (typeof QRCode === 'undefined') {
+            console.log('🔄 Loading QRCode from alternative CDN...');
+            const script1 = document.createElement('script');
+            script1.src = 'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js';
+            document.head.appendChild(script1);
+        }
+        
+        if (typeof jsQR === 'undefined') {
+            console.log('🔄 Loading jsQR from alternative CDN...');
+            const script2 = document.createElement('script');
+            script2.src = 'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js';
+            document.head.appendChild(script2);
+        }
+    </script>
+
+    <script>
+        // Wait for libraries to load
+        function waitForLibraries() {
+            return new Promise((resolve) => {
+                const checkInterval = setInterval(() => {
+                    if (typeof QRCode !== 'undefined' && typeof jsQR !== 'undefined') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    resolve();
+                }, 10000);
+            });
+        }
+
+        function checkLibraries() {
+            const statusDiv = document.getElementById('library-status');
+            let status = '';
+
+            // Check QRCode library
+            if (typeof QRCode !== 'undefined') {
+                status += '<div class="status success">✅ QRCode library loaded successfully</div>';
+                status += `<div class="status info">📦 QRCode version: ${QRCode.version || 'Unknown'}</div>`;
+            } else {
+                status += '<div class="status error">❌ QRCode library not loaded</div>';
+                status += '<div class="status warning">⚠️ Try refreshing the page or check internet connection</div>';
+            }
+
+            // Check jsQR library
+            if (typeof jsQR !== 'undefined') {
+                status += '<div class="status success">✅ jsQR library loaded successfully</div>';
+            } else {
+                status += '<div class="status error">❌ jsQR library not loaded</div>';
+            }
+
+            // Check browser support
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                status += '<div class="status success">✅ Camera API supported</div>';
+            } else {
+                status += '<div class="status warning">⚠️ Camera API not supported (HTTPS required)</div>';
+            }
+
+            // Check Canvas support
+            const canvas = document.createElement('canvas');
+            if (canvas.getContext && canvas.getContext('2d')) {
+                status += '<div class="status success">✅ Canvas API supported</div>';
+            } else {
+                status += '<div class="status error">❌ Canvas API not supported</div>';
+            }
+
+            statusDiv.innerHTML = status;
+        }
+
+        async function testBasicQR() {
+            const resultDiv = document.getElementById('basic-qr-result');
+            
+            try {
+                resultDiv.innerHTML = '<div class="status info">🔄 Testing basic QR generation...</div>';
+                
+                if (typeof QRCode === 'undefined') {
+                    resultDiv.innerHTML = '<div class="status error">❌ QRCode library not available</div>';
+                    return;
+                }
+                
+                // Generate simple QR code
+                const qrDataURL = await QRCode.toDataURL('Hello World!', {
+                    width: 256,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="status success">✅ Basic QR code generated!</div>
+                    <img src="${qrDataURL}" alt="Basic QR Code">
+                    <p><strong>Data:</strong> "Hello World!"</p>
+                `;
+                
+            } catch (error) {
+                console.error('Basic QR generation failed:', error);
+                resultDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testAdvancedQR() {
+            const resultDiv = document.getElementById('advanced-qr-result');
+            
+            try {
+                resultDiv.innerHTML = '<div class="status info">🔄 Testing advanced QR generation...</div>';
+                
+                if (typeof QRCode === 'undefined') {
+                    resultDiv.innerHTML = '<div class="status error">❌ QRCode library not available</div>';
+                    return;
+                }
+                
+                // Create complex data
+                const userData = {
+                    version: '2.0',
+                    type: 'AGP_ATTENDANCE',
+                    userId: 'user_001',
+                    name: 'John Doe',
+                    email: 'john.doe@agp.com',
+                    department: 'IT',
+                    position: 'Software Developer',
+                    role: 'user',
+                    generatedAt: new Date().toISOString(),
+                    validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+                    issuer: 'AG&P_ATTENDANCE_SYSTEM',
+                    signature: generateSimpleHash('user_001' + Date.now())
+                };
+                
+                const qrString = JSON.stringify(userData);
+                console.log('QR Data:', userData);
+                console.log('QR String Length:', qrString.length);
+                
+                const qrDataURL = await QRCode.toDataURL(qrString, {
+                    width: 300,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    },
+                    errorCorrectionLevel: 'M'
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="status success">✅ Advanced QR code generated!</div>
+                    <img src="${qrDataURL}" alt="Advanced QR Code">
+                    <p><strong>Data Length:</strong> ${qrString.length} characters</p>
+                    <details>
+                        <summary>📋 Click to view QR data</summary>
+                        <pre>${JSON.stringify(userData, null, 2)}</pre>
+                    </details>
+                `;
+                
+            } catch (error) {
+                console.error('Advanced QR generation failed:', error);
+                resultDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testQRScanning() {
+            const resultDiv = document.getElementById('scanning-result');
+            
+            try {
+                resultDiv.innerHTML = '<div class="status info">🔄 Testing QR scanning capabilities...</div>';
+                
+                if (typeof jsQR === 'undefined') {
+                    resultDiv.innerHTML = '<div class="status error">❌ jsQR library not available</div>';
+                    return;
+                }
+                
+                // Create a test QR code and try to read it
+                const testData = 'Test QR Code for Scanning';
+                const qrDataURL = await QRCode.toDataURL(testData, { width: 200 });
+                
+                // Create image and canvas for scanning test
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        resultDiv.innerHTML = `
+                            <div class="status success">✅ QR scanning test successful!</div>
+                            <img src="${qrDataURL}" alt="Test QR Code">
+                            <p><strong>Original Data:</strong> "${testData}"</p>
+                            <p><strong>Scanned Data:</strong> "${code.data}"</p>
+                            <p><strong>Match:</strong> ${testData === code.data ? '✅ Perfect' : '❌ Mismatch'}</p>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="status error">❌ Failed to scan QR code</div>
+                            <img src="${qrDataURL}" alt="Test QR Code">
+                        `;
+                    }
+                };
+                img.src = qrDataURL;
+                
+            } catch (error) {
+                console.error('QR scanning test failed:', error);
+                resultDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Simple hash function for testing
+        function generateSimpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(16);
+        }
+
+        // Auto-check libraries when page loads
+        window.addEventListener('load', async () => {
+            console.log('🔄 Page loaded, waiting for libraries...');
+            await waitForLibraries();
+            console.log('✅ Libraries check complete');
+            checkLibraries();
+        });
+    </script>
+</body>
+</html>

@@ -2402,3 +2402,150 @@ a.stat-card:hover::before {
         align-self: flex-end;
     }
 }
+
+/* QR Scanner Section Styles */
+.scanner-content {
+    padding: 20px 0;
+}
+
+.scanner-info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.info-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(255, 122, 69, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 122, 69, 0.2);
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 122, 69, 0.2);
+}
+
+.info-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #ff7a45, #ff6b35);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.info-content h3 {
+    margin: 0 0 8px 0;
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.info-content p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.scanner-instructions {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.scanner-instructions h3 {
+    margin: 0 0 15px 0;
+    color: #ff7a45;
+    font-size: 1.2rem;
+}
+
+.scanner-instructions ol {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-color);
+}
+
+.scanner-instructions li {
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+.scanner-stats {
+    background: linear-gradient(135deg, rgba(255, 122, 69, 0.1), rgba(255, 107, 53, 0.1));
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 122, 69, 0.2);
+}
+
+.scanner-stats h3 {
+    margin: 0 0 20px 0;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ff7a45;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Mobile responsiveness for scanner */
+@media (max-width: 768px) {
+    .scanner-info-cards {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .info-card {
+        padding: 15px;
+    }
+
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+}

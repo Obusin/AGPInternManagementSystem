@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REAL QR CODE - NO LIBRARIES!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #000;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: #222;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        #qr-display {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: inline-block;
+        }
+        .btn {
+            padding: 15px 30px;
+            margin: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .btn:hover {
+            background: #cc0000;
+        }
+        .btn-download {
+            background: #00aa00;
+        }
+        .btn-download:hover {
+            background: #008800;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .success {
+            background: #00aa00;
+        }
+        .error {
+            background: #ff4444;
+        }
+        .info {
+            background: #0088cc;
+        }
+        img {
+            max-width: 300px;
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 REAL QR CODE - NO LIBRARIES! 🔥</h1>
+    
+    <div class="container">
+        <h2>👤 MARK ILAGAN - IT DEPARTMENT</h2>
+        <p><strong>Employee ID:</strong> EMP_MARK_001</p>
+        <p><strong>Email:</strong> mark.ilagan@agp.com</p>
+        
+        <button class="btn" onclick="generateQRNow()">🚀 GENERATE QR CODE NOW!</button>
+        
+        <div id="status"></div>
+        <div id="qr-display"></div>
+        <div id="download-area"></div>
+    </div>
+
+    <script>
+        // MARK ILAGAN'S DATA
+        const MARK_DATA = {
+            "type": "AGP_ATTENDANCE",
+            "userId": "EMP_MARK_001",
+            "name": "Mark Ilagan",
+            "email": "mark.ilagan@agp.com",
+            "department": "IT",
+            "position": "Software Developer",
+            "generated": new Date().toISOString(),
+            "valid_until": new Date(Date.now() + 365*24*60*60*1000).toISOString()
+        };
+
+        let currentQRImage = null;
+
+        function generateQRNow() {
+            const status = document.getElementById('status');
+            const qrDisplay = document.getElementById('qr-display');
+            const downloadArea = document.getElementById('download-area');
+            
+            status.innerHTML = '<div class="status info">🔄 GENERATING QR CODE...</div>';
+            
+            try {
+                // Convert data to JSON string
+                const qrData = JSON.stringify(MARK_DATA);
+                console.log('QR Data:', qrData);
+                console.log('Data Length:', qrData.length);
+                
+                // Use Google Charts API to generate QR code (NO LIBRARIES NEEDED!)
+                const encodedData = encodeURIComponent(qrData);
+                const qrURL = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodedData}&choe=UTF-8`;
+                
+                console.log('QR URL:', qrURL);
+                
+                // Create image element
+                const img = document.createElement('img');
+                img.src = qrURL;
+                img.alt = 'Mark Ilagan QR Code';
+                img.style.maxWidth = '300px';
+                
+                img.onload = function() {
+                    currentQRImage = qrURL;
+                    qrDisplay.innerHTML = '';
+                    qrDisplay.appendChild(img);
+                    
+                    status.innerHTML = '<div class="status success">🎉 REAL QR CODE GENERATED!</div>';
+                    
+                    downloadArea.innerHTML = `
+                        <button class="btn btn-download" onclick="downloadQRImage()">
+                            📥 DOWNLOAD QR CODE
+                        </button>
+                        <button class="btn" onclick="openQRInNewTab()">
+                            🔗 OPEN QR IN NEW TAB
+                        </button>
+                        <p style="color: #00ff00; font-weight: bold;">✅ SCAN THIS WITH YOUR PHONE!</p>
+                        <p style="color: #ffff00;">📱 This is a REAL QR code that works with any scanner!</p>
+                    `;
+                };
+                
+                img.onerror = function() {
+                    status.innerHTML = '<div class="status error">❌ Failed to load QR image from Google API</div>';
+                    
+                    // Fallback: Create a simple QR using another method
+                    generateFallbackQR(qrData);
+                };
+                
+            } catch (error) {
+                console.error('Error:', error);
+                status.innerHTML = `<div class="status error">❌ ERROR: ${error.message}</div>`;
+            }
+        }
+
+        function generateFallbackQR(data) {
+            const qrDisplay = document.getElementById('qr-display');
+            const status = document.getElementById('status');
+            
+            // Use QR Server API as fallback
+            const encodedData = encodeURIComponent(data);
+            const fallbackURL = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedData}`;
+            
+            const img = document.createElement('img');
+            img.src = fallbackURL;
+            img.alt = 'Mark Ilagan QR Code (Fallback)';
+            img.style.maxWidth = '300px';
+            
+            img.onload = function() {
+                currentQRImage = fallbackURL;
+                qrDisplay.innerHTML = '';
+                qrDisplay.appendChild(img);
+                
+                status.innerHTML = '<div class="status success">🎉 FALLBACK QR CODE GENERATED!</div>';
+                
+                document.getElementById('download-area').innerHTML = `
+                    <button class="btn btn-download" onclick="downloadQRImage()">
+                        📥 DOWNLOAD QR CODE
+                    </button>
+                    <button class="btn" onclick="openQRInNewTab()">
+                        🔗 OPEN QR IN NEW TAB
+                    </button>
+                    <p style="color: #00ff00; font-weight: bold;">✅ SCAN THIS WITH YOUR PHONE!</p>
+                `;
+            };
+            
+            img.onerror = function() {
+                status.innerHTML = '<div class="status error">❌ All QR generation methods failed</div>';
+                
+                // Last resort: show the data
+                qrDisplay.innerHTML = `
+                    <div style="background: white; color: black; padding: 20px; text-align: left;">
+                        <h3>QR DATA (Manual Entry):</h3>
+                        <textarea style="width: 100%; height: 150px; font-family: monospace;">${data}</textarea>
+                        <p><strong>Copy this data and create QR manually</strong></p>
+                    </div>
+                `;
+            };
+        }
+
+        function downloadQRImage() {
+            if (!currentQRImage) {
+                alert('No QR code to download!');
+                return;
+            }
+            
+            // Create a link to download the image
+            const link = document.createElement('a');
+            link.href = currentQRImage;
+            link.download = `MARK-ILAGAN-QR-${Date.now()}.png`;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('🎉 QR CODE DOWNLOAD STARTED!');
+        }
+
+        function openQRInNewTab() {
+            if (!currentQRImage) {
+                alert('No QR code to open!');
+                return;
+            }
+            
+            window.open(currentQRImage, '_blank');
+        }
+
+        // Auto-generate when page loads
+        window.addEventListener('load', () => {
+            console.log('🔥 NO-LIBRARY QR GENERATOR LOADED');
+            setTimeout(generateQRNow, 1000);
+        });
+    </script>
+</body>
+</html>

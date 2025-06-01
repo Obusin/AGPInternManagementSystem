@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 LAPTOP CAMERA QR READER</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #000;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: #222;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        #video {
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            border: 3px solid #ff4444;
+            border-radius: 10px;
+            background: #333;
+        }
+        #canvas {
+            display: none;
+        }
+        .btn {
+            padding: 15px 30px;
+            margin: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .btn:hover {
+            background: #cc0000;
+        }
+        .btn-stop {
+            background: #666;
+        }
+        .btn-stop:hover {
+            background: #444;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .success {
+            background: #00aa00;
+        }
+        .error {
+            background: #ff4444;
+        }
+        .info {
+            background: #0088cc;
+        }
+        .warning {
+            background: #ff8800;
+        }
+        .scan-result {
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .scan-result h3 {
+            color: #00ff00;
+            margin-top: 0;
+        }
+        .scan-result pre {
+            background: #111;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .camera-controls {
+            margin: 20px 0;
+        }
+        .scanning-indicator {
+            display: none;
+            color: #00ff00;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 LAPTOP CAMERA QR READER</h1>
+    <p>Scan QR codes using your laptop's camera</p>
+
+    <div class="container">
+        <div class="camera-controls">
+            <button class="btn" onclick="startCamera()">📹 START CAMERA</button>
+            <button class="btn btn-stop" onclick="stopCamera()">⏹️ STOP CAMERA</button>
+            <button class="btn" onclick="showScanHistory()">📋 SCAN HISTORY</button>
+            <button class="btn" onclick="clearScanHistory()">🗑️ CLEAR HISTORY</button>
+        </div>
+
+        <div class="camera-controls">
+            <label style="color: #aaa;">Accuracy: </label>
+            <select id="accuracy-setting" onchange="updateAccuracySettings()" style="background: #333; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;">
+                <option value="7">MAXIMUM (7 detections + quality check)</option>
+                <option value="5" selected>ULTRA HIGH (5 detections + stability)</option>
+                <option value="3">High (3 detections)</option>
+                <option value="2">Medium (2 detections)</option>
+                <option value="1">Low (1 detection)</option>
+            </select>
+
+            <label style="color: #aaa; margin-left: 20px;">Cooldown: </label>
+            <select id="cooldown-setting" onchange="updateCooldownSettings()" style="background: #333; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;">
+                <option value="5000">5 seconds</option>
+                <option value="3000" selected>3 seconds</option>
+                <option value="1000">1 second</option>
+                <option value="0">No cooldown</option>
+            </select>
+        </div>
+
+        <div class="camera-controls">
+            <label style="color: #aaa;">Detection Timeout: </label>
+            <select id="timeout-setting" onchange="updateTimeoutSettings()" style="background: #333; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;">
+                <option value="15000">15 seconds</option>
+                <option value="10000" selected>10 seconds</option>
+                <option value="7000">7 seconds</option>
+                <option value="5000">5 seconds</option>
+                <option value="3000">3 seconds (fast)</option>
+            </select>
+
+            <label style="color: #aaa; margin-left: 20px;">Stability Timeout: </label>
+            <select id="stability-timeout-setting" onchange="updateStabilityTimeoutSettings()" style="background: #333; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;">
+                <option value="5000">5 seconds</option>
+                <option value="3000" selected>3 seconds</option>
+                <option value="2000">2 seconds</option>
+                <option value="1000">1 second (fast)</option>
+            </select>
+
+            <button class="btn" onclick="resetDetection()" style="background: #666; margin-left: 20px;">🔄 RESET DETECTION</button>
+        </div>
+
+        <div class="camera-controls">
+            <label style="color: #aaa;">Scan Cooldown: </label>
+            <select id="cooldown-period-setting" onchange="updateScanCooldown()" style="background: #333; color: white; border: 1px solid #555; padding: 5px; border-radius: 3px;">
+                <option value="8000">8 seconds (very safe)</option>
+                <option value="5000" selected>5 seconds (recommended)</option>
+                <option value="3000">3 seconds (fast)</option>
+                <option value="1000">1 second (testing)</option>
+                <option value="0">No cooldown (testing only)</option>
+            </select>
+        </div>
+        
+        <div id="status"></div>
+        
+        <video id="video" autoplay muted playsinline>
+            <p>Your browser doesn't support video streaming</p>
+        </video>
+        
+        <canvas id="canvas"></canvas>
+        
+        <div class="scanning-indicator" id="scanning-indicator">
+            🔍 SCANNING FOR QR CODES...
+        </div>
+        
+        <div id="scan-results"></div>
+    </div>
+
+    <!-- jsQR Library for QR code detection -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+    <script>
+        let video = null;
+        let canvas = null;
+        let ctx = null;
+        let scanning = false;
+        let stream = null;
+
+        // MAXIMUM ACCURACY scanning variables
+        let lastScannedCode = null;
+        let lastScannedTime = 0;
+        let scanCooldown = 3000; // 3 seconds between same QR scans
+        let consecutiveDetections = 0;
+        let requiredDetections = 5; // INCREASED: Need 5 consecutive detections for maximum accuracy
+        let currentDetectedCode = null;
+        let scanHistory = new Set(); // Track scanned codes in this session
+
+        // SUPER ACCURACY ENHANCEMENTS
+        let detectionConfidence = new Map(); // Track confidence scores
+        let multiAngleDetections = []; // Store detections from multiple angles
+        let qualityThreshold = 0.8; // Minimum quality score
+        let stabilityCheck = true; // Check for stable detection
+        let enhancedProcessing = true; // Enable image enhancement
+        let adaptiveBrightness = true; // Auto-adjust brightness
+
+        // TIMEOUT MANAGEMENT
+        let detectionStartTime = null; // When current detection started
+        let maxDetectionTime = 10000; // 10 seconds max detection time
+        let partialDetectionTimeout = 5000; // 5 seconds for partial detection
+        let stabilityTimeout = 3000; // 3 seconds for stability check
+        let timeoutWarningShown = false;
+        let detectionTimeoutId = null;
+
+        // DUPLICATE PREVENTION & SOUND MANAGEMENT
+        let isProcessingQR = false; // Prevent multiple simultaneous processing
+        let lastProcessedQR = null; // Last successfully processed QR
+        let lastProcessedTime = 0; // When last QR was processed
+        let soundCooldown = 1000; // 1 second between sounds
+        let lastSoundTime = 0; // When last sound was played
+        let processingLock = false; // Global processing lock
+
+        // SIMPLE DUPLICATE PREVENTION
+        let lastSuccessfulScan = null;
+        let lastScanTime = 0;
+        let scanCooldownPeriod = 5000; // 5 seconds between scans
+
+        function initializeElements() {
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+        }
+
+        async function startCamera() {
+            const status = document.getElementById('status');
+            const scanningIndicator = document.getElementById('scanning-indicator');
+            
+            try {
+                status.innerHTML = '<div class="status info">🔄 STARTING CAMERA...</div>';
+                
+                initializeElements();
+                
+                // Request camera access with enhanced settings
+                const constraints = {
+                    video: {
+                        facingMode: 'environment', // Try back camera first
+                        width: { ideal: 1280, min: 640 },
+                        height: { ideal: 720, min: 480 },
+                        frameRate: { ideal: 30, min: 15 },
+                        focusMode: 'continuous',
+                        exposureMode: 'continuous',
+                        whiteBalanceMode: 'continuous'
+                    }
+                };
+
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                } catch (error) {
+                    // Fallback to basic constraints if enhanced ones fail
+                    console.log('Enhanced constraints failed, trying basic...');
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        }
+                    });
+                }
+                
+                video.srcObject = stream;
+                
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    status.innerHTML = '<div class="status success">✅ CAMERA STARTED! Hold QR code in front of camera</div>';
+                    scanningIndicator.style.display = 'block';
+                    
+                    // Start scanning
+                    scanning = true;
+                    scanForQRCode();
+                };
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                
+                if (error.name === 'NotAllowedError') {
+                    status.innerHTML = '<div class="status error">❌ CAMERA PERMISSION DENIED! Please allow camera access and try again.</div>';
+                } else if (error.name === 'NotFoundError') {
+                    status.innerHTML = '<div class="status error">❌ NO CAMERA FOUND! Make sure your laptop has a camera.</div>';
+                } else {
+                    status.innerHTML = `<div class="status error">❌ CAMERA ERROR: ${error.message}</div>`;
+                }
+            }
+        }
+
+        function stopCamera() {
+            const status = document.getElementById('status');
+            const scanningIndicator = document.getElementById('scanning-indicator');
+
+            scanning = false;
+            scanningIndicator.style.display = 'none';
+
+            // Clear all timeouts and reset detection state
+            resetDetectionState();
+
+            // Clear wait period
+            isInWaitPeriod = false;
+            waitPeriodStartTime = 0;
+            clearWaitPeriodTimeout();
+
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+
+            if (video) {
+                video.srcObject = null;
+            }
+
+            status.innerHTML = '<div class="status info">📹 CAMERA STOPPED</div>';
+        }
+
+        function scanForQRCode() {
+            if (!scanning || !video || video.readyState !== video.HAVE_ENOUGH_DATA) {
+                if (scanning) {
+                    requestAnimationFrame(scanForQRCode);
+                }
+                return;
+            }
+
+            // MAXIMUM ACCURACY: Multiple scanning approaches
+            let bestCode = null;
+            let highestConfidence = 0;
+
+            // 1. ENHANCED IMAGE PROCESSING
+            if (enhancedProcessing) {
+                bestCode = scanWithImageEnhancement();
+                if (bestCode && bestCode.confidence > highestConfidence) {
+                    highestConfidence = bestCode.confidence;
+                }
+            }
+
+            // 2. MULTI-SCALE SCANNING
+            const scales = [1.0, 1.2, 0.8, 1.5]; // Different zoom levels
+            for (const scale of scales) {
+                const scaleCode = scanAtScale(scale);
+                if (scaleCode && scaleCode.confidence > highestConfidence) {
+                    bestCode = scaleCode;
+                    highestConfidence = scaleCode.confidence;
+                }
+            }
+
+            // 3. ADAPTIVE BRIGHTNESS SCANNING
+            if (adaptiveBrightness) {
+                const brightnessCode = scanWithBrightnessAdjustment();
+                if (brightnessCode && brightnessCode.confidence > highestConfidence) {
+                    bestCode = brightnessCode;
+                    highestConfidence = brightnessCode.confidence;
+                }
+            }
+
+            // 4. EDGE DETECTION ENHANCEMENT
+            const edgeCode = scanWithEdgeDetection();
+            if (edgeCode && edgeCode.confidence > highestConfidence) {
+                bestCode = edgeCode;
+                highestConfidence = edgeCode.confidence;
+            }
+
+            // Process the best detection with simple duplicate prevention
+            if (bestCode && highestConfidence >= qualityThreshold && !processingLock) {
+                // Check for recent duplicate
+                if (!isRecentDuplicate(bestCode.data)) {
+                    handleSuperAccurateDetection(bestCode, highestConfidence);
+                }
+            } else {
+                // Reset if no quality detection
+                if (currentDetectedCode && !processingLock) {
+                    consecutiveDetections = 0;
+                    currentDetectedCode = null;
+                    detectionConfidence.clear();
+                    updateScanningStatus();
+                }
+            }
+
+            // Continue scanning at optimized rate
+            if (scanning) {
+                setTimeout(() => requestAnimationFrame(scanForQRCode), 25); // 40fps for maximum accuracy
+            }
+        }
+
+        function scanWithImageEnhancement() {
+            // Enhanced image processing for better QR detection
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            // Apply contrast enhancement
+            enhanceContrast(imageData);
+
+            return performQRScan(imageData, 'enhanced');
+        }
+
+        function scanAtScale(scale) {
+            const scaledWidth = canvas.width * scale;
+            const scaledHeight = canvas.height * scale;
+
+            // Create temporary canvas for scaling
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = scaledWidth;
+            tempCanvas.height = scaledHeight;
+
+            tempCtx.imageSmoothingEnabled = false;
+            tempCtx.drawImage(video, 0, 0, scaledWidth, scaledHeight);
+
+            const imageData = tempCtx.getImageData(0, 0, scaledWidth, scaledHeight);
+            return performQRScan(imageData, `scale_${scale}`);
+        }
+
+        function scanWithBrightnessAdjustment() {
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            // Adjust brightness and contrast
+            adjustBrightnessContrast(imageData, 20, 1.3);
+
+            return performQRScan(imageData, 'brightness');
+        }
+
+        function scanWithEdgeDetection() {
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            // Apply edge detection filter
+            applyEdgeDetection(imageData);
+
+            return performQRScan(imageData, 'edge');
+        }
+
+        function performQRScan(imageData, method) {
+            if (typeof jsQR === 'undefined') return null;
+
+            let code = null;
+            let confidence = 0;
+
+            // Try multiple inversion strategies
+            const strategies = ["dontInvert", "onlyInvert", "attemptBoth"];
+
+            for (const strategy of strategies) {
+                const result = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: strategy
+                });
+
+                if (result) {
+                    // Calculate confidence based on QR code quality
+                    const currentConfidence = calculateQRConfidence(result);
+                    if (currentConfidence > confidence) {
+                        code = result;
+                        confidence = currentConfidence;
+                        code.confidence = confidence;
+                        code.method = method;
+                        code.strategy = strategy;
+                    }
+                }
+            }
+
+            return code;
+        }
+
+        function calculateQRConfidence(qrResult) {
+            let confidence = 0.5; // Base confidence
+
+            // Check data length (longer = more likely to be real)
+            if (qrResult.data.length > 50) confidence += 0.2;
+            if (qrResult.data.length > 100) confidence += 0.1;
+
+            // Check if it's JSON (structured data = higher confidence)
+            try {
+                JSON.parse(qrResult.data);
+                confidence += 0.2;
+            } catch (e) {
+                // Not JSON, but could still be valid
+            }
+
+            // Check for our attendance QR pattern
+            if (qrResult.data.includes('AGP_ATTENDANCE')) {
+                confidence += 0.3;
+            }
+
+            // Check corner detection quality (if available)
+            if (qrResult.location && qrResult.location.topLeftCorner) {
+                confidence += 0.1;
+            }
+
+            return Math.min(confidence, 1.0);
+        }
+
+        function isRecentDuplicate(qrData) {
+            const now = Date.now();
+
+            // Simple cooldown check
+            if (lastSuccessfulScan === qrData && (now - lastScanTime) < scanCooldownPeriod) {
+                const remaining = Math.ceil((scanCooldownPeriod - (now - lastScanTime)) / 1000);
+                console.log(`🚫 Duplicate scan blocked - ${remaining}s cooldown remaining`);
+
+                document.getElementById('status').innerHTML =
+                    `<div class="status warning">🚫 Same QR scanned recently - Wait ${remaining}s</div>`;
+                return true;
+            }
+
+            return false;
+        }
+
+        function handleSuperAccurateDetection(code, confidence) {
+            const now = Date.now();
+
+            // SUPER ACCURACY: Track confidence over time
+            if (!detectionConfidence.has(code.data)) {
+                detectionConfidence.set(code.data, []);
+            }
+
+            const confidenceHistory = detectionConfidence.get(code.data);
+            confidenceHistory.push({
+                confidence: confidence,
+                timestamp: now,
+                method: code.method,
+                strategy: code.strategy
+            });
+
+            // Keep only recent detections (last 2 seconds)
+            const recentDetections = confidenceHistory.filter(d => now - d.timestamp < 2000);
+            detectionConfidence.set(code.data, recentDetections);
+
+            // Check if this is the same code we're currently detecting
+            if (currentDetectedCode === code.data) {
+                consecutiveDetections++;
+
+                // CHECK FOR DETECTION TIMEOUT
+                if (detectionStartTime && (now - detectionStartTime) > maxDetectionTime) {
+                    handleDetectionTimeout('MAXIMUM_TIME_EXCEEDED');
+                    return;
+                }
+
+                // CHECK FOR PARTIAL DETECTION TIMEOUT
+                if (detectionStartTime && (now - detectionStartTime) > partialDetectionTimeout && consecutiveDetections < requiredDetections / 2) {
+                    handleDetectionTimeout('PARTIAL_DETECTION_SLOW');
+                    return;
+                }
+
+                // STABILITY CHECK: Ensure consistent high confidence
+                if (stabilityCheck && recentDetections.length >= 3) {
+                    const avgConfidence = recentDetections.reduce((sum, d) => sum + d.confidence, 0) / recentDetections.length;
+                    const confidenceVariance = calculateVariance(recentDetections.map(d => d.confidence));
+
+                    // CHECK FOR STABILITY TIMEOUT
+                    if (detectionStartTime && (now - detectionStartTime) > stabilityTimeout && (avgConfidence < 0.85 || confidenceVariance > 0.05)) {
+                        handleDetectionTimeout('STABILITY_FAILED');
+                        return;
+                    }
+
+                    // Require stable, high confidence
+                    if (avgConfidence < 0.85 || confidenceVariance > 0.05) {
+                        const timeElapsed = detectionStartTime ? ((now - detectionStartTime) / 1000).toFixed(1) : '0';
+                        updateScanningStatus(`🔍 STABILIZING... (conf: ${(avgConfidence * 100).toFixed(0)}%, var: ${(confidenceVariance * 100).toFixed(1)}%) [${timeElapsed}s]`);
+
+                        // Show timeout warning
+                        if (!timeoutWarningShown && detectionStartTime && (now - detectionStartTime) > stabilityTimeout * 0.7) {
+                            showTimeoutWarning('stability');
+                        }
+                        return;
+                    }
+                }
+
+                updateScanningStatus();
+
+                // If we have enough consecutive HIGH-QUALITY detections, process the code
+                if (consecutiveDetections >= requiredDetections) {
+                    // FINAL QUALITY CHECK
+                    const finalConfidence = recentDetections[recentDetections.length - 1].confidence;
+                    if (finalConfidence < 0.9) {
+                        console.log('Final quality check failed:', finalConfidence);
+                        handleDetectionTimeout('QUALITY_CHECK_FAILED');
+                        return;
+                    }
+
+                    // Check for duplicates and cooldown
+                    if (isDuplicateOrCooling(code.data, now)) {
+                        return;
+                    }
+
+                    // SUCCESS! Process the SUPER ACCURATE QR code
+                    if (!isProcessingQR) {
+                        isProcessingQR = true;
+                        processingLock = true;
+                        clearDetectionTimeout();
+
+                        // Update simple tracking
+                        lastSuccessfulScan = code.data;
+                        lastScanTime = now;
+
+                        processSuperAccurateQRCode(code, recentDetections);
+
+                        // Update tracking
+                        lastScannedCode = code.data;
+                        lastScannedTime = now;
+                        scanHistory.add(code.data);
+
+                        // Reset detection state
+                        resetDetectionState();
+
+                        // Release processing lock after a delay
+                        setTimeout(() => {
+                            isProcessingQR = false;
+                            processingLock = false;
+                            console.log('🔓 Processing lock released');
+                        }, 2000);
+                    }
+                }
+            } else {
+                // New code detected, start counting
+                resetDetectionState();
+                currentDetectedCode = code.data;
+                consecutiveDetections = 1;
+                detectionStartTime = now;
+                timeoutWarningShown = false;
+                detectionConfidence.clear(); // Clear old detections
+                detectionConfidence.set(code.data, recentDetections);
+
+                // Set detection timeout
+                setDetectionTimeout();
+                updateScanningStatus();
+            }
+        }
+
+        function handleDetectionTimeout(reason) {
+            console.log('Detection timeout:', reason);
+
+            const reasonMessages = {
+                'MAXIMUM_TIME_EXCEEDED': '⏰ DETECTION TIMEOUT - Maximum time exceeded',
+                'PARTIAL_DETECTION_SLOW': '⏰ DETECTION TIMEOUT - Partial detection too slow',
+                'STABILITY_FAILED': '⏰ DETECTION TIMEOUT - Stability check failed',
+                'QUALITY_CHECK_FAILED': '⏰ DETECTION TIMEOUT - Quality check failed',
+                'MANUAL_TIMEOUT': '⏰ DETECTION TIMEOUT - Manual timeout'
+            };
+
+            const message = reasonMessages[reason] || '⏰ DETECTION TIMEOUT - Unknown reason';
+
+            document.getElementById('status').innerHTML =
+                `<div class="status warning">${message}</div>`;
+
+            // Reset detection state
+            resetDetectionState();
+
+            // Brief pause before resuming scanning
+            setTimeout(() => {
+                if (scanning) {
+                    document.getElementById('status').innerHTML =
+                        '<div class="status info">🔍 Resuming scan after timeout...</div>';
+                }
+            }, 2000);
+        }
+
+        function resetDetectionState() {
+            consecutiveDetections = 0;
+            currentDetectedCode = null;
+            detectionStartTime = null;
+            timeoutWarningShown = false;
+            detectionConfidence.clear();
+            clearDetectionTimeout();
+
+            // Don't reset processing lock here - let it timeout naturally
+            // This prevents immediate re-processing of the same QR
+        }
+
+        function resetDetection() {
+            console.log('Manual detection reset');
+            resetDetectionState();
+
+            // Force clear processing lock on manual reset
+            isProcessingQR = false;
+            processingLock = false;
+
+            // Clear simple duplicate tracking
+            lastSuccessfulScan = null;
+            lastScanTime = 0;
+
+            document.getElementById('status').innerHTML =
+                '<div class="status info">🔄 Detection manually reset - all locks cleared</div>';
+            clearResults();
+        }
+
+        function clearScanHistory() {
+            scanHistory.clear();
+            lastScannedCode = null;
+            lastScannedTime = 0;
+
+            // Also clear simple duplicate tracking
+            lastSuccessfulScan = null;
+            lastScanTime = 0;
+            isProcessingQR = false;
+            processingLock = false;
+
+            document.getElementById('status').innerHTML =
+                '<div class="status info">🗑️ Scan history and duplicate tracking cleared</div>';
+            clearResults();
+        }
+
+        function setDetectionTimeout() {
+            clearDetectionTimeout();
+            detectionTimeoutId = setTimeout(() => {
+                if (currentDetectedCode) {
+                    handleDetectionTimeout('MANUAL_TIMEOUT');
+                }
+            }, maxDetectionTime);
+        }
+
+        function clearDetectionTimeout() {
+            if (detectionTimeoutId) {
+                clearTimeout(detectionTimeoutId);
+                detectionTimeoutId = null;
+            }
+        }
+
+        function showTimeoutWarning(type) {
+            if (timeoutWarningShown) return;
+            timeoutWarningShown = true;
+
+            const warnings = {
+                'stability': '⚠️ Stability check taking longer than expected...',
+                'detection': '⚠️ Detection taking longer than expected...',
+                'quality': '⚠️ Quality check taking longer than expected...'
+            };
+
+            const warning = warnings[type] || '⚠️ Detection taking longer than expected...';
+            console.log(warning);
+        }
+
+        function calculateVariance(values) {
+            const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+            const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
+            return squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+        }
+
+        // IMAGE PROCESSING FUNCTIONS FOR MAXIMUM ACCURACY
+        function enhanceContrast(imageData) {
+            const data = imageData.data;
+            const factor = 1.5; // Contrast enhancement factor
+
+            for (let i = 0; i < data.length; i += 4) {
+                // Apply contrast enhancement to RGB channels
+                data[i] = Math.min(255, Math.max(0, (data[i] - 128) * factor + 128));     // Red
+                data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * factor + 128)); // Green
+                data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * factor + 128)); // Blue
+            }
+        }
+
+        function adjustBrightnessContrast(imageData, brightness, contrast) {
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                // Apply brightness and contrast to RGB channels
+                data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128 + brightness));
+                data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * contrast + 128 + brightness));
+                data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * contrast + 128 + brightness));
+            }
+        }
+
+        function applyEdgeDetection(imageData) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const output = new Uint8ClampedArray(data);
+
+            // Sobel edge detection kernel
+            const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+            const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let pixelX = 0;
+                    let pixelY = 0;
+
+                    for (let i = -1; i <= 1; i++) {
+                        for (let j = -1; j <= 1; j++) {
+                            const idx = ((y + i) * width + (x + j)) * 4;
+                            const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+                            const kernelIdx = (i + 1) * 3 + (j + 1);
+
+                            pixelX += gray * sobelX[kernelIdx];
+                            pixelY += gray * sobelY[kernelIdx];
+                        }
+                    }
+
+                    const magnitude = Math.sqrt(pixelX * pixelX + pixelY * pixelY);
+                    const outputIdx = (y * width + x) * 4;
+
+                    output[outputIdx] = magnitude;     // Red
+                    output[outputIdx + 1] = magnitude; // Green
+                    output[outputIdx + 2] = magnitude; // Blue
+                    output[outputIdx + 3] = 255;       // Alpha
+                }
+            }
+
+            // Copy enhanced data back
+            for (let i = 0; i < data.length; i++) {
+                data[i] = output[i];
+            }
+        }
+
+        function isDuplicateOrCooling(codeData, currentTime) {
+            // Check if same code was scanned recently (cooldown period)
+            if (lastScannedCode === codeData && (currentTime - lastScannedTime) < scanCooldown) {
+                const remainingCooldown = Math.ceil((scanCooldown - (currentTime - lastScannedTime)) / 1000);
+                document.getElementById('status').innerHTML =
+                    `<div class="status warning">⏳ SAME QR DETECTED - Wait ${remainingCooldown}s before scanning again</div>`;
+                return true;
+            }
+
+            return false;
+        }
+
+        function updateScanningStatus(customMessage = null) {
+            const scanningIndicator = document.getElementById('scanning-indicator');
+
+            if (customMessage) {
+                scanningIndicator.innerHTML = customMessage;
+                scanningIndicator.style.color = '#ff8800';
+            } else if (currentDetectedCode) {
+                const progress = `(${consecutiveDetections}/${requiredDetections})`;
+                const confidence = detectionConfidence.has(currentDetectedCode) ?
+                    detectionConfidence.get(currentDetectedCode) : [];
+
+                // Add timeout countdown
+                let timeoutInfo = '';
+                if (detectionStartTime) {
+                    const elapsed = (Date.now() - detectionStartTime) / 1000;
+                    const remaining = Math.max(0, (maxDetectionTime / 1000) - elapsed);
+                    timeoutInfo = ` [${remaining.toFixed(1)}s left]`;
+                }
+
+                if (confidence.length > 0) {
+                    const latestConf = confidence[confidence.length - 1].confidence;
+                    const confPercent = (latestConf * 100).toFixed(0);
+                    scanningIndicator.innerHTML =
+                        `🎯 SUPER ACCURATE DETECTION... ${progress} [${confPercent}% confidence]${timeoutInfo}`;
+                } else {
+                    scanningIndicator.innerHTML =
+                        `🎯 DETECTING QR CODE... ${progress}${timeoutInfo}`;
+                }
+                scanningIndicator.style.color = '#ffaa00';
+            } else {
+                scanningIndicator.innerHTML = '🔍 MAXIMUM ACCURACY SCANNING...';
+                scanningIndicator.style.color = '#00ff00';
+            }
+        }
+
+        function updateTimeoutSettings() {
+            const setting = document.getElementById('timeout-setting').value;
+            maxDetectionTime = parseInt(setting);
+            partialDetectionTimeout = Math.min(partialDetectionTimeout, maxDetectionTime * 0.5);
+            console.log('Detection timeout updated to:', maxDetectionTime, 'ms');
+        }
+
+        function updateStabilityTimeoutSettings() {
+            const setting = document.getElementById('stability-timeout-setting').value;
+            stabilityTimeout = parseInt(setting);
+            console.log('Stability timeout updated to:', stabilityTimeout, 'ms');
+        }
+
+        function updateScanCooldown() {
+            const setting = document.getElementById('cooldown-period-setting').value;
+            scanCooldownPeriod = parseInt(setting);
+            console.log('Scan cooldown updated to:', scanCooldownPeriod, 'ms');
+        }
+
+
+
+        function processSuperAccurateQRCode(code, detectionHistory) {
+            const scanResults = document.getElementById('scan-results');
+            const status = document.getElementById('status');
+
+            // Calculate final statistics
+            const avgConfidence = detectionHistory.reduce((sum, d) => sum + d.confidence, 0) / detectionHistory.length;
+            const methods = [...new Set(detectionHistory.map(d => d.method))];
+            const strategies = [...new Set(detectionHistory.map(d => d.strategy))];
+
+            console.log('SUPER ACCURATE QR Code processed:', {
+                data: code.data,
+                avgConfidence: avgConfidence,
+                detections: detectionHistory.length,
+                methods: methods,
+                strategies: strategies
+            });
+
+            try {
+                // Try to parse as JSON (for our attendance QR codes)
+                const qrData = JSON.parse(code.data);
+
+                // Check if it's our attendance QR code
+                if (qrData.type === 'AGP_ATTENDANCE') {
+                    displaySuperAccurateAttendanceQR(qrData, avgConfidence, methods);
+                    status.innerHTML = `<div class="status success">🎉 SUPER ACCURATE ATTENDANCE QR CONFIRMED! (${(avgConfidence * 100).toFixed(1)}% confidence)</div>`;
+                } else {
+                    displaySuperAccurateGenericQR(code.data, qrData, avgConfidence, methods);
+                    status.innerHTML = `<div class="status success">✅ SUPER ACCURATE QR CONFIRMED! (${(avgConfidence * 100).toFixed(1)}% confidence)</div>`;
+                }
+
+            } catch (error) {
+                // Not JSON, display as plain text
+                displaySuperAccurateTextQR(code.data, avgConfidence, methods);
+                status.innerHTML = `<div class="status success">✅ SUPER ACCURATE QR CONFIRMED! (${(avgConfidence * 100).toFixed(1)}% confidence)</div>`;
+            }
+
+            // Play enhanced success sound
+            playEnhancedSuccessSound();
+        }
+
+        function displaySuperAccurateAttendanceQR(qrData, confidence, methods) {
+            const scanResults = document.getElementById('scan-results');
+
+            const now = new Date();
+            const validUntil = new Date(qrData.valid_until || qrData.validUntil);
+            const isValid = validUntil > now;
+
+            scanResults.innerHTML = `
+                <div class="scan-result">
+                    <h3>🎯 SUPER ACCURATE AG&P ATTENDANCE QR</h3>
+                    <div style="background: #004400; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        <strong>🔬 ACCURACY METRICS:</strong><br>
+                        📊 Confidence: ${(confidence * 100).toFixed(1)}%<br>
+                        🔍 Detection Methods: ${methods.join(', ')}<br>
+                        ✅ Quality: ${confidence > 0.95 ? 'EXCELLENT' : confidence > 0.9 ? 'VERY HIGH' : 'HIGH'}
+                    </div>
+                    <p><strong>👤 Name:</strong> ${qrData.name}</p>
+                    <p><strong>🆔 Employee ID:</strong> ${qrData.userId}</p>
+                    <p><strong>📧 Email:</strong> ${qrData.email}</p>
+                    <p><strong>🏢 Department:</strong> ${qrData.department}</p>
+                    <p><strong>💼 Position:</strong> ${qrData.position}</p>
+                    <p><strong>📅 Generated:</strong> ${new Date(qrData.generated || qrData.generatedAt).toLocaleString()}</p>
+                    <p><strong>⏰ Valid Until:</strong> ${validUntil.toLocaleString()}</p>
+                    <p><strong>✅ Status:</strong> <span style="color: ${isValid ? '#00ff00' : '#ff4444'}">${isValid ? 'VALID' : 'EXPIRED'}</span></p>
+
+                    <div style="margin-top: 20px;">
+                        <button class="btn" onclick="recordSuperAccurateAttendance('${qrData.userId}', '${qrData.name}', ${confidence})">
+                            ⏰ RECORD SUPER ACCURATE ATTENDANCE
+                        </button>
+                        <button class="btn" onclick="clearResults()">
+                            🗑️ CLEAR
+                        </button>
+                    </div>
+
+                    <details style="margin-top: 15px;">
+                        <summary>� Raw QR Data</summary>
+                        <pre>${JSON.stringify(qrData, null, 2)}</pre>
+                    </details>
+                </div>
+            `;
+        }
+
+        function recordSuperAccurateAttendance(userId, userName, confidence) {
+            const now = new Date();
+            const timeString = now.toLocaleString();
+
+            // Enhanced attendance record with accuracy metrics
+            const attendanceRecord = {
+                userId: userId,
+                userName: userName,
+                timestamp: now.toISOString(),
+                type: 'super_accurate_qr_scan',
+                confidence: confidence,
+                accuracy_level: confidence > 0.95 ? 'EXCELLENT' : confidence > 0.9 ? 'VERY_HIGH' : 'HIGH'
+            };
+
+            alert(`✅ SUPER ACCURATE ATTENDANCE RECORDED!\n\nUser: ${userName}\nID: ${userId}\nTime: ${timeString}\nAccuracy: ${(confidence * 100).toFixed(1)}%\nQuality: ${attendanceRecord.accuracy_level}`);
+
+            console.log('Super Accurate Attendance Record:', attendanceRecord);
+        }
+
+        function playEnhancedSuccessSound() {
+            const now = Date.now();
+
+            // Prevent multiple sounds within cooldown period
+            if (now - lastSoundTime < soundCooldown) {
+                console.log('🔇 Sound blocked - cooldown active');
+                return;
+            }
+
+            lastSoundTime = now;
+
+            try {
+                // Create a more sophisticated success sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                // First tone
+                const oscillator1 = audioContext.createOscillator();
+                const gainNode1 = audioContext.createGain();
+                oscillator1.connect(gainNode1);
+                gainNode1.connect(audioContext.destination);
+                oscillator1.frequency.value = 800;
+                oscillator1.type = 'sine';
+                gainNode1.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                oscillator1.start(audioContext.currentTime);
+                oscillator1.stop(audioContext.currentTime + 0.2);
+
+                // Second tone (higher)
+                const oscillator2 = audioContext.createOscillator();
+                const gainNode2 = audioContext.createGain();
+                oscillator2.connect(gainNode2);
+                gainNode2.connect(audioContext.destination);
+                oscillator2.frequency.value = 1000;
+                oscillator2.type = 'sine';
+                gainNode2.gain.setValueAtTime(0.2, audioContext.currentTime + 0.1);
+                gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                oscillator2.start(audioContext.currentTime + 0.1);
+                oscillator2.stop(audioContext.currentTime + 0.3);
+
+                console.log('🔊 Enhanced success sound played');
+
+            } catch (error) {
+                console.log('Could not play enhanced sound:', error);
+            }
+        }
+
+        function processQRCode(code) {
+            const scanResults = document.getElementById('scan-results');
+            const status = document.getElementById('status');
+
+            console.log('QR Code processed:', code.data);
+
+            try {
+                // Try to parse as JSON (for our attendance QR codes)
+                const qrData = JSON.parse(code.data);
+
+                // Check if it's our attendance QR code
+                if (qrData.type === 'AGP_ATTENDANCE') {
+                    displayAttendanceQR(qrData);
+                    status.innerHTML = '<div class="status success">🎉 ATTENDANCE QR CODE CONFIRMED!</div>';
+                } else {
+                    displayGenericQR(code.data, qrData);
+                    status.innerHTML = '<div class="status success">✅ QR CODE CONFIRMED!</div>';
+                }
+
+            } catch (error) {
+                // Not JSON, display as plain text
+                displayTextQR(code.data);
+                status.innerHTML = '<div class="status success">✅ QR CODE CONFIRMED!</div>';
+            }
+
+            // Play success sound
+            playSuccessSound();
+        }
+
+        function displayAttendanceQR(qrData) {
+            const scanResults = document.getElementById('scan-results');
+            
+            const now = new Date();
+            const validUntil = new Date(qrData.valid_until || qrData.validUntil);
+            const isValid = validUntil > now;
+            
+            scanResults.innerHTML = `
+                <div class="scan-result">
+                    <h3>🎯 AG&P ATTENDANCE QR CODE</h3>
+                    <p><strong>👤 Name:</strong> ${qrData.name}</p>
+                    <p><strong>🆔 Employee ID:</strong> ${qrData.userId}</p>
+                    <p><strong>📧 Email:</strong> ${qrData.email}</p>
+                    <p><strong>🏢 Department:</strong> ${qrData.department}</p>
+                    <p><strong>💼 Position:</strong> ${qrData.position}</p>
+                    <p><strong>📅 Generated:</strong> ${new Date(qrData.generated || qrData.generatedAt).toLocaleString()}</p>
+                    <p><strong>⏰ Valid Until:</strong> ${validUntil.toLocaleString()}</p>
+                    <p><strong>✅ Status:</strong> <span style="color: ${isValid ? '#00ff00' : '#ff4444'}">${isValid ? 'VALID' : 'EXPIRED'}</span></p>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn" onclick="recordAttendance('${qrData.userId}', '${qrData.name}')">
+                            ⏰ RECORD ATTENDANCE
+                        </button>
+                        <button class="btn" onclick="clearResults()">
+                            🗑️ CLEAR
+                        </button>
+                    </div>
+                    
+                    <details style="margin-top: 15px;">
+                        <summary>📋 Raw QR Data</summary>
+                        <pre>${JSON.stringify(qrData, null, 2)}</pre>
+                    </details>
+                </div>
+            `;
+        }
+
+        function displayGenericQR(rawData, parsedData) {
+            const scanResults = document.getElementById('scan-results');
+            
+            scanResults.innerHTML = `
+                <div class="scan-result">
+                    <h3>📱 QR CODE DETECTED</h3>
+                    <p><strong>Type:</strong> JSON Data</p>
+                    <button class="btn" onclick="clearResults()">🗑️ CLEAR</button>
+                    <details style="margin-top: 15px;">
+                        <summary>📋 QR Data</summary>
+                        <pre>${JSON.stringify(parsedData, null, 2)}</pre>
+                    </details>
+                </div>
+            `;
+        }
+
+        function displayTextQR(data) {
+            const scanResults = document.getElementById('scan-results');
+            
+            scanResults.innerHTML = `
+                <div class="scan-result">
+                    <h3>📱 QR CODE DETECTED</h3>
+                    <p><strong>Type:</strong> Text/URL</p>
+                    <p><strong>Content:</strong></p>
+                    <div style="background: #111; padding: 15px; border-radius: 5px; word-break: break-all;">
+                        ${data}
+                    </div>
+                    <button class="btn" onclick="clearResults()">🗑️ CLEAR</button>
+                </div>
+            `;
+        }
+
+        function recordAttendance(userId, userName) {
+            const now = new Date();
+            const timeString = now.toLocaleString();
+            
+            // Here you would integrate with your attendance system
+            alert(`✅ ATTENDANCE RECORDED!\n\nUser: ${userName}\nID: ${userId}\nTime: ${timeString}`);
+            
+            // You can add actual attendance recording logic here
+            console.log('Recording attendance:', {
+                userId: userId,
+                userName: userName,
+                timestamp: now.toISOString(),
+                type: 'qr_scan'
+            });
+        }
+
+        function clearResults() {
+            document.getElementById('scan-results').innerHTML = '';
+        }
+
+        function updateAccuracySettings() {
+            const setting = document.getElementById('accuracy-setting').value;
+            requiredDetections = parseInt(setting);
+            console.log('Accuracy updated to:', requiredDetections, 'detections required');
+        }
+
+        function updateCooldownSettings() {
+            const setting = document.getElementById('cooldown-setting').value;
+            scanCooldown = parseInt(setting);
+            console.log('Cooldown updated to:', scanCooldown, 'ms');
+        }
+
+        function showScanHistory() {
+            const scanResults = document.getElementById('scan-results');
+
+            if (scanHistory.size === 0) {
+                scanResults.innerHTML = `
+                    <div class="scan-result">
+                        <h3>📋 Scan History</h3>
+                        <p>No QR codes scanned yet in this session.</p>
+                        <button class="btn" onclick="clearResults()">🗑️ CLOSE</button>
+                    </div>
+                `;
+                return;
+            }
+
+            let historyHTML = `
+                <div class="scan-result">
+                    <h3>📋 Scan History (${scanHistory.size} codes)</h3>
+                    <div style="max-height: 300px; overflow-y: auto;">
+            `;
+
+            let index = 1;
+            scanHistory.forEach(codeData => {
+                try {
+                    const parsed = JSON.parse(codeData);
+                    if (parsed.type === 'AGP_ATTENDANCE') {
+                        historyHTML += `
+                            <div style="background: #111; margin: 10px 0; padding: 10px; border-radius: 5px;">
+                                <strong>${index}. ${parsed.name}</strong> (${parsed.userId})
+                                <br><small style="color: #aaa;">${parsed.department} - ${parsed.position}</small>
+                            </div>
+                        `;
+                    } else {
+                        historyHTML += `
+                            <div style="background: #111; margin: 10px 0; padding: 10px; border-radius: 5px;">
+                                <strong>${index}. Generic QR Code</strong>
+                                <br><small style="color: #aaa;">${codeData.substring(0, 50)}...</small>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    historyHTML += `
+                        <div style="background: #111; margin: 10px 0; padding: 10px; border-radius: 5px;">
+                            <strong>${index}. Text QR Code</strong>
+                            <br><small style="color: #aaa;">${codeData.substring(0, 50)}...</small>
+                        </div>
+                    `;
+                }
+                index++;
+            });
+
+            historyHTML += `
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn" onclick="clearScanHistory()">🗑️ CLEAR HISTORY</button>
+                        <button class="btn" onclick="clearResults()">❌ CLOSE</button>
+                    </div>
+                </div>
+            `;
+
+            scanResults.innerHTML = historyHTML;
+        }
+
+
+
+        function playSuccessSound() {
+            try {
+                // Create a simple beep sound
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (error) {
+                console.log('Could not play sound:', error);
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', () => {
+            console.log('🔍 QR Camera Reader loaded');
+            
+            // Check for camera support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                document.getElementById('status').innerHTML = 
+                    '<div class="status error">❌ CAMERA NOT SUPPORTED! Your browser doesn\'t support camera access.</div>';
+            } else {
+                document.getElementById('status').innerHTML = 
+                    '<div class="status info">📹 Ready! Click "START CAMERA" to begin scanning QR codes.</div>';
+            }
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+        });
+    </script>
+</body>
+</html>

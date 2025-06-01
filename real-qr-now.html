@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REAL QR CODE FOR MARK ILAGAN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #000;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: #222;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        #qr-code {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: inline-block;
+        }
+        .btn {
+            padding: 15px 30px;
+            margin: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .btn:hover {
+            background: #cc0000;
+        }
+        .btn-download {
+            background: #00aa00;
+        }
+        .btn-download:hover {
+            background: #008800;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .success {
+            background: #00aa00;
+        }
+        .error {
+            background: #ff4444;
+        }
+        .info {
+            background: #0088cc;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 REAL QR CODE FOR MARK ILAGAN 🔥</h1>
+    
+    <div class="container">
+        <h2>👤 MARK ILAGAN - IT DEPARTMENT</h2>
+        <p><strong>Employee ID:</strong> EMP_MARK_001</p>
+        <p><strong>Email:</strong> mark.ilagan@agp.com</p>
+        
+        <button class="btn" onclick="generateRealQR()">🚀 GENERATE REAL QR CODE NOW!</button>
+        
+        <div id="status"></div>
+        <div id="qr-code"></div>
+        <div id="download-area"></div>
+    </div>
+
+    <script>
+        // MARK ILAGAN'S DATA
+        const MARK_DATA = {
+            "type": "AGP_ATTENDANCE",
+            "userId": "EMP_MARK_001",
+            "name": "Mark Ilagan",
+            "email": "mark.ilagan@agp.com",
+            "department": "IT",
+            "position": "Software Developer",
+            "generated": new Date().toISOString(),
+            "valid_until": new Date(Date.now() + 365*24*60*60*1000).toISOString()
+        };
+
+        let qrCodeImage = null;
+
+        async function generateRealQR() {
+            const status = document.getElementById('status');
+            const qrDiv = document.getElementById('qr-code');
+            const downloadArea = document.getElementById('download-area');
+            
+            status.innerHTML = '<div class="status info">🔄 LOADING QR LIBRARY...</div>';
+            
+            try {
+                // Load QRCode library dynamically
+                await loadQRLibrary();
+                
+                status.innerHTML = '<div class="status info">🔄 GENERATING REAL QR CODE...</div>';
+                
+                // Generate the actual QR code
+                const qrString = JSON.stringify(MARK_DATA);
+                console.log('QR Data:', qrString);
+                
+                const qrDataURL = await QRCode.toDataURL(qrString, {
+                    width: 300,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    },
+                    errorCorrectionLevel: 'M'
+                });
+                
+                qrCodeImage = qrDataURL;
+                
+                // Display the QR code
+                qrDiv.innerHTML = `<img src="${qrDataURL}" alt="Mark Ilagan QR Code" style="max-width: 300px;">`;
+                
+                // Show download button
+                downloadArea.innerHTML = `
+                    <button class="btn btn-download" onclick="downloadQR()">
+                        📥 DOWNLOAD QR CODE NOW!
+                    </button>
+                    <p style="color: #00ff00; font-weight: bold;">✅ REAL QR CODE GENERATED!</p>
+                `;
+                
+                status.innerHTML = '<div class="status success">🎉 SUCCESS! REAL QR CODE IS READY!</div>';
+                
+            } catch (error) {
+                console.error('QR Generation Error:', error);
+                status.innerHTML = `<div class="status error">❌ ERROR: ${error.message}</div>`;
+                
+                // Fallback: Show the data as text
+                qrDiv.innerHTML = `
+                    <div style="background: white; color: black; padding: 20px; border-radius: 10px;">
+                        <h3>QR DATA (Copy this for manual entry):</h3>
+                        <textarea style="width: 100%; height: 150px; font-family: monospace;">${JSON.stringify(MARK_DATA, null, 2)}</textarea>
+                    </div>
+                `;
+            }
+        }
+
+        function loadQRLibrary() {
+            return new Promise((resolve, reject) => {
+                if (typeof QRCode !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                // Try multiple CDNs
+                const cdns = [
+                    'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+                    'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js',
+                    'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'
+                ];
+                
+                let currentCDN = 0;
+                
+                function tryNextCDN() {
+                    if (currentCDN >= cdns.length) {
+                        reject(new Error('All CDNs failed to load QRCode library'));
+                        return;
+                    }
+                    
+                    const script = document.createElement('script');
+                    script.src = cdns[currentCDN];
+                    script.onload = () => {
+                        if (typeof QRCode !== 'undefined') {
+                            console.log(`✅ QRCode loaded from CDN ${currentCDN + 1}`);
+                            resolve();
+                        } else {
+                            currentCDN++;
+                            tryNextCDN();
+                        }
+                    };
+                    script.onerror = () => {
+                        console.log(`❌ CDN ${currentCDN + 1} failed`);
+                        currentCDN++;
+                        tryNextCDN();
+                    };
+                    document.head.appendChild(script);
+                }
+                
+                tryNextCDN();
+            });
+        }
+
+        function downloadQR() {
+            if (!qrCodeImage) {
+                alert('No QR code to download!');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = `MARK-ILAGAN-QR-CODE-${Date.now()}.png`;
+            link.href = qrCodeImage;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('🎉 QR CODE DOWNLOADED! Check your downloads folder.');
+        }
+
+        // Auto-generate when page loads
+        window.addEventListener('load', () => {
+            console.log('🔥 REAL QR GENERATOR LOADED');
+            setTimeout(generateRealQR, 1000);
+        });
+    </script>
+</body>
+</html>

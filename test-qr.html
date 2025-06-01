@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #2e3540;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #ff7a45;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #e05a25;
+        }
+        #qr-display {
+            margin: 20px 0;
+            text-align: center;
+        }
+        #qr-display img {
+            max-width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #28a745; }
+        .error { background: #dc3545; }
+        .info { background: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>QR Code System Test</h1>
+    
+    <div class="test-section">
+        <h2>Library Status</h2>
+        <div id="library-status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>QR Code Generation Test</h2>
+        <button onclick="testQRGeneration()">Generate Test QR Code</button>
+        <div id="qr-display"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Camera Scanner Test</h2>
+        <button onclick="testCameraScanner()">Test Camera Scanner</button>
+        <div id="scanner-status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>User Database Test</h2>
+        <button onclick="testUserDatabase()">Test User Database</button>
+        <div id="database-status"></div>
+    </div>
+
+    <!-- QR Code Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+
+    <!-- User Database -->
+    <script src="modules/user-management/users-database.js"></script>
+
+    <!-- Supabase Configuration -->
+    <script src="src/config/supabase-client.js"></script>
+
+    <!-- QR Services -->
+    <script src="src/services/QRCodeService.js"></script>
+    <script src="src/services/CameraQRScanner.js"></script>
+    <script src="src/components/QRScannerUI.js"></script>
+    <script src="src/components/QRCodeManager.js"></script>
+
+    <script>
+        // Test script
+        window.addEventListener('load', () => {
+            checkLibraryStatus();
+        });
+
+        function checkLibraryStatus() {
+            const statusDiv = document.getElementById('library-status');
+            let status = '';
+
+            // Check QR libraries
+            if (typeof QRCode !== 'undefined') {
+                status += '<div class="status success">✅ QRCode library loaded</div>';
+            } else {
+                status += '<div class="status error">❌ QRCode library not loaded</div>';
+            }
+
+            if (typeof jsQR !== 'undefined') {
+                status += '<div class="status success">✅ jsQR library loaded</div>';
+            } else {
+                status += '<div class="status error">❌ jsQR library not loaded</div>';
+            }
+
+            // Check our services
+            if (window.qrCodeService) {
+                status += '<div class="status success">✅ QRCodeService loaded</div>';
+            } else {
+                status += '<div class="status error">❌ QRCodeService not loaded</div>';
+            }
+
+            if (window.cameraQRScanner) {
+                status += '<div class="status success">✅ CameraQRScanner loaded</div>';
+            } else {
+                status += '<div class="status error">❌ CameraQRScanner not loaded</div>';
+            }
+
+            if (window.qrScannerUI) {
+                status += '<div class="status success">✅ QRScannerUI loaded</div>';
+            } else {
+                status += '<div class="status error">❌ QRScannerUI not loaded</div>';
+            }
+
+            if (window.qrCodeManager) {
+                status += '<div class="status success">✅ QRCodeManager loaded</div>';
+            } else {
+                status += '<div class="status error">❌ QRCodeManager not loaded</div>';
+            }
+
+            if (window.userDatabase) {
+                status += '<div class="status success">✅ UserDatabase loaded</div>';
+            } else {
+                status += '<div class="status error">❌ UserDatabase not loaded</div>';
+            }
+
+            // Check Supabase
+            if (typeof supabase !== 'undefined') {
+                status += '<div class="status success">✅ Supabase library loaded</div>';
+            } else {
+                status += '<div class="status error">❌ Supabase library not loaded</div>';
+            }
+
+            if (window.supabaseService) {
+                status += '<div class="status success">✅ Supabase service loaded</div>';
+            } else {
+                status += '<div class="status error">❌ Supabase service not loaded</div>';
+            }
+
+            statusDiv.innerHTML = status;
+        }
+
+        async function testQRGeneration() {
+            const displayDiv = document.getElementById('qr-display');
+
+            // First test if QRCode library is available
+            if (typeof QRCode === 'undefined') {
+                displayDiv.innerHTML = '<div class="status error">❌ QRCode library not loaded</div>';
+                return;
+            }
+
+            if (!window.qrCodeService) {
+                displayDiv.innerHTML = '<div class="status error">❌ QRCodeService not available</div>';
+                return;
+            }
+
+            try {
+                displayDiv.innerHTML = '<div class="status info">🔄 Testing QRCode library first...</div>';
+
+                // Test QRCode library directly first
+                const testQR = await QRCode.toDataURL('Hello World', {
+                    width: 200,
+                    margin: 1
+                });
+
+                displayDiv.innerHTML = '<div class="status info">✅ QRCode library working. Testing service...</div>';
+
+                // Test user data
+                const testUser = {
+                    id: 'test_001',
+                    name: 'Test User',
+                    email: 'test@agp.com',
+                    department: 'IT',
+                    position: 'Intern',
+                    role: 'user'
+                };
+
+                displayDiv.innerHTML = '<div class="status info">🔄 Generating QR code...</div>';
+
+                const result = await window.qrCodeService.generateUserQRCode(testUser);
+
+                if (result.success) {
+                    displayDiv.innerHTML = `
+                        <div class="status success">✅ QR Code generated successfully!</div>
+                        <img src="${result.qrCode}" alt="Generated QR Code">
+                        <details>
+                            <summary>QR Data (click to expand)</summary>
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </details>
+                    `;
+                } else {
+                    displayDiv.innerHTML = `<div class="status error">❌ Failed to generate QR code: ${result.message || result.error}</div>`;
+                }
+            } catch (error) {
+                console.error('QR Generation Error:', error);
+                displayDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testCameraScanner() {
+            const statusDiv = document.getElementById('scanner-status');
+            
+            if (!window.cameraQRScanner) {
+                statusDiv.innerHTML = '<div class="status error">CameraQRScanner not available</div>';
+                return;
+            }
+
+            try {
+                statusDiv.innerHTML = '<div class="status info">Testing camera access...</div>';
+
+                // Test camera availability
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    statusDiv.innerHTML = '<div class="status error">❌ Camera not supported on this device</div>';
+                    return;
+                }
+
+                // Test camera permission
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream.getTracks().forEach(track => track.stop()); // Stop immediately
+
+                statusDiv.innerHTML = '<div class="status success">✅ Camera access available! Scanner should work.</div>';
+
+            } catch (error) {
+                if (error.name === 'NotAllowedError') {
+                    statusDiv.innerHTML = '<div class="status error">❌ Camera permission denied</div>';
+                } else if (error.name === 'NotFoundError') {
+                    statusDiv.innerHTML = '<div class="status error">❌ No camera found</div>';
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Camera error: ${error.message}</div>`;
+                }
+            }
+        }
+
+        function testUserDatabase() {
+            const statusDiv = document.getElementById('database-status');
+            
+            if (!window.userDatabase) {
+                statusDiv.innerHTML = '<div class="status error">UserDatabase not available</div>';
+                return;
+            }
+
+            try {
+                const users = window.userDatabase.getAllUsers();
+                const stats = window.qrCodeService ? window.qrCodeService.getQRCodeStats() : null;
+                
+                statusDiv.innerHTML = `
+                    <div class="status success">✅ User database working</div>
+                    <div class="status info">Total users: ${users.length}</div>
+                    ${stats ? `
+                        <div class="status info">Users with QR codes: ${stats.usersWithQRCodes}</div>
+                        <div class="status info">QR coverage: ${stats.coverage}%</div>
+                    ` : ''}
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Database error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

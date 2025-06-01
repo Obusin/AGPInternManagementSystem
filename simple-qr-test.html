@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple QR Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #ff7a45;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #e05a25;
+        }
+        #result {
+            margin: 20px 0;
+            padding: 20px;
+            background: #2e3540;
+            border-radius: 8px;
+        }
+        #result img {
+            max-width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <h1>Simple QR Code Test</h1>
+    
+    <button onclick="testBasicQR()">Test Basic QR Generation</button>
+    <button onclick="testComplexQR()">Test Complex QR Generation</button>
+    
+    <div id="result"></div>
+
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+    <script>
+        async function testBasicQR() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                resultDiv.innerHTML = '<div class="info">🔄 Testing basic QR generation...</div>';
+                
+                // Test if QRCode library is loaded
+                if (typeof QRCode === 'undefined') {
+                    resultDiv.innerHTML = '<div class="error">❌ QRCode library not loaded</div>';
+                    return;
+                }
+                
+                // Generate simple QR code
+                const qrDataURL = await QRCode.toDataURL('Hello World', {
+                    width: 256,
+                    margin: 1,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Basic QR code generated successfully!</div>
+                    <img src="${qrDataURL}" alt="Basic QR Code">
+                    <p>Data: "Hello World"</p>
+                `;
+                
+            } catch (error) {
+                console.error('Basic QR generation failed:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testComplexQR() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                resultDiv.innerHTML = '<div class="info">🔄 Testing complex QR generation...</div>';
+                
+                // Test complex data structure
+                const complexData = {
+                    version: '2.0',
+                    type: 'AGP_ATTENDANCE',
+                    userId: 'test_001',
+                    name: 'Test User',
+                    email: 'test@agp.com',
+                    department: 'IT',
+                    position: 'Intern',
+                    role: 'user',
+                    generatedAt: new Date().toISOString(),
+                    validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+                    issuer: 'AG&P_ATTENDANCE_SYSTEM',
+                    signature: 'test_signature_123'
+                };
+                
+                const qrString = JSON.stringify(complexData);
+                console.log('QR Data String:', qrString);
+                console.log('QR Data Length:', qrString.length);
+                
+                const qrDataURL = await QRCode.toDataURL(qrString, {
+                    width: 256,
+                    margin: 1,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    },
+                    errorCorrectionLevel: 'M'
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Complex QR code generated successfully!</div>
+                    <img src="${qrDataURL}" alt="Complex QR Code">
+                    <details>
+                        <summary>QR Data (click to expand)</summary>
+                        <pre>${JSON.stringify(complexData, null, 2)}</pre>
+                    </details>
+                    <p>Data length: ${qrString.length} characters</p>
+                `;
+                
+            } catch (error) {
+                console.error('Complex QR generation failed:', error);
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            console.log('Simple QR Test loaded');
+            console.log('QRCode available:', typeof QRCode !== 'undefined');
+        });
+    </script>
+</body>
+</html>

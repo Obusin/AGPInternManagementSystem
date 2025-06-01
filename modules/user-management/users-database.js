@@ -751,10 +751,35 @@ class UserDatabase {
             createdAt: userData.createdAt || new Date().toISOString(),
             lastLogin: null,
             isActive: userData.isActive !== undefined ? userData.isActive : true,
-            customPermissions: userData.customPermissions || {}
+            customPermissions: userData.customPermissions || {},
+            qrCode: userData.qrCode || null // QR code data storage
         };
 
         return true;
+    }
+
+    /**
+     * Update existing user
+     */
+    updateUser(userId, updatedData) {
+        try {
+            // Find user by ID
+            const userKey = Object.keys(this.users).find(key => this.users[key].id === userId);
+
+            if (!userKey) {
+                console.error('User not found for update:', userId);
+                return false;
+            }
+
+            // Update user data
+            this.users[userKey] = { ...this.users[userKey], ...updatedData };
+
+            console.log('User updated successfully:', userId);
+            return true;
+        } catch (error) {
+            console.error('Failed to update user:', error);
+            return false;
+        }
     }
 
     /**

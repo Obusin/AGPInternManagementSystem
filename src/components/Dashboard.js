@@ -161,11 +161,7 @@ export class Dashboard {
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="action-btn action-btn--primary" id="qr-scan-btn">
-                        <i class="fas fa-qrcode"></i>
-                        <span>QR Scanner</span>
-                    </button>
-                    <button class="action-btn action-btn--secondary" id="barcode-scan-btn">
+                    <button class="action-btn action-btn--primary" id="barcode-scan-btn">
                         <i class="fas fa-barcode"></i>
                         <span>Barcode</span>
                     </button>
@@ -281,6 +277,62 @@ export class Dashboard {
                 </div>
             </div>
 
+            <!-- QR Scanner Section -->
+            <div class="qr-scanner-section">
+                <div class="qr-scanner-header">
+                    <div class="qr-scanner-title">
+                        <h3 class="section-title">
+                            <i class="fas fa-qrcode"></i>
+                            QR Code Scanner
+                        </h3>
+                        <p class="section-subtitle">Scan your attendance QR code to track time</p>
+                    </div>
+                    <div class="qr-scanner-controls">
+                        <button class="qr-control-btn qr-control-btn--primary" id="start-camera-btn">
+                            <i class="fas fa-video"></i>
+                            <span>Start Camera</span>
+                        </button>
+                        <button class="qr-control-btn qr-control-btn--secondary" id="stop-camera-btn" style="display: none;">
+                            <i class="fas fa-stop"></i>
+                            <span>Stop Camera</span>
+                        </button>
+                        <select id="cooldown-setting" class="qr-select">
+                            <option value="8000">8 seconds (very safe)</option>
+                            <option value="5000" selected>5 seconds (recommended)</option>
+                            <option value="3000">3 seconds (fast)</option>
+                            <option value="1000">1 second (testing)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="qr-status" class="qr-status">
+                    <div class="status-message">📹 Ready! Click "Start Camera" to begin scanning.</div>
+                </div>
+
+                <div class="qr-video-container">
+                    <video id="qr-video" autoplay muted playsinline style="display: none;">
+                        <p>Your browser doesn't support video streaming</p>
+                    </video>
+                    <canvas id="qr-canvas" style="display: none;"></canvas>
+
+                    <div class="qr-scanning-indicator" id="qr-scanning-indicator" style="display: none;">
+                        🔍 SCANNING FOR QR CODES...
+                    </div>
+
+                    <div class="qr-placeholder" id="qr-placeholder">
+                        <div class="placeholder-icon">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                        <div class="placeholder-content">
+                            <h4 class="placeholder-title">QR Code Scanner Ready</h4>
+                            <p class="placeholder-text">Click "Start Camera" to begin scanning your attendance QR code</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="qr-scan-results" class="qr-scan-results"></div>
+            </div>
+
             <!-- Recent Activity -->
             <div class="activity-section">
                 <div class="activity-header">
@@ -363,13 +415,8 @@ export class Dashboard {
      * Setup event listeners
      */
     setupEventListeners() {
-        // QR scanner button
-        const qrScanBtn = document.getElementById('qr-scan-btn');
-        if (qrScanBtn) {
-            qrScanBtn.addEventListener('click', () => {
-                this.openQRScanner();
-            });
-        }
+        // QR scanner embedded controls
+        this.setupEmbeddedQRScanner();
 
         // Barcode scanner button
         const barcodeScanBtn = document.getElementById('barcode-scan-btn');
@@ -539,91 +586,51 @@ export class Dashboard {
 
 
     /**
-     * Open QR Scanner
+     * Setup Embedded QR Scanner
      */
-    openQRScanner() {
-        // Create QR scanner modal
-        this.createQRScannerModal();
+    setupEmbeddedQRScanner() {
+        // Load jsQR library
+        this.loadJSQRLibrary();
+
+        // Add embedded QR scanner styles
+        this.addEmbeddedQRScannerStyles();
+
+        // Setup event listeners for embedded scanner
+        this.setupEmbeddedQREventListeners();
+
+        // Initialize QR scanner variables
+        this.qrScanning = false;
+        this.qrStream = null;
+        this.qrVideo = null;
+        this.qrCanvas = null;
+        this.qrCtx = null;
+        this.qrLastScanned = null;
+        this.qrLastScanTime = 0;
+        this.qrScanCooldown = 5000;
+        this.qrIsProcessing = false;
     }
 
     /**
-     * Create QR Scanner Modal
+     * Setup Embedded QR Event Listeners
      */
-    createQRScannerModal() {
-        // Remove existing modal if any
-        const existingModal = document.getElementById('qr-scanner-modal');
-        if (existingModal) {
-            existingModal.remove();
+    setupEmbeddedQREventListeners() {
+        // Start camera button
+        const startBtn = document.getElementById('start-camera-btn');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => this.startQRCamera());
         }
 
-        // Create modal
-        const modal = document.createElement('div');
-        modal.id = 'qr-scanner-modal';
-        modal.className = 'qr-scanner-modal';
-        modal.innerHTML = `
-            <div class="qr-scanner-overlay"></div>
-            <div class="qr-scanner-container">
-                <div class="qr-scanner-header">
-                    <h2>
-                        <i class="fas fa-qrcode"></i>
-                        QR Code Scanner
-                    </h2>
-                    <button class="qr-scanner-close" id="qr-scanner-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+        // Stop camera button
+        const stopBtn = document.getElementById('stop-camera-btn');
+        if (stopBtn) {
+            stopBtn.addEventListener('click', () => this.stopQRCamera());
+        }
 
-                <div class="qr-scanner-content">
-                    <div class="qr-scanner-controls">
-                        <button class="qr-control-btn qr-control-btn--primary" id="start-camera-btn">
-                            <i class="fas fa-video"></i>
-                            <span>Start Camera</span>
-                        </button>
-                        <button class="qr-control-btn qr-control-btn--secondary" id="stop-camera-btn" style="display: none;">
-                            <i class="fas fa-stop"></i>
-                            <span>Stop Camera</span>
-                        </button>
-                        <select id="cooldown-setting" class="qr-select">
-                            <option value="8000">8 seconds (very safe)</option>
-                            <option value="5000" selected>5 seconds (recommended)</option>
-                            <option value="3000">3 seconds (fast)</option>
-                            <option value="1000">1 second (testing)</option>
-                        </select>
-                    </div>
-
-                    <div id="qr-status" class="qr-status">
-                        <div class="status-message">📹 Ready! Click "Start Camera" to begin scanning.</div>
-                    </div>
-
-                    <div class="qr-video-container">
-                        <video id="qr-video" autoplay muted playsinline style="display: none;">
-                            <p>Your browser doesn't support video streaming</p>
-                        </video>
-                        <canvas id="qr-canvas" style="display: none;"></canvas>
-
-                        <div class="qr-scanning-indicator" id="qr-scanning-indicator" style="display: none;">
-                            🔍 SCANNING FOR QR CODES...
-                        </div>
-                    </div>
-
-                    <div id="qr-scan-results" class="qr-scan-results"></div>
-                </div>
-            </div>
-        `;
-
-        // Add styles
-        this.addQRScannerStyles();
-
-        // Add to page
-        document.body.appendChild(modal);
-
-        // Setup event listeners
-        this.setupQRScannerEventListeners();
-
-        // Show modal
-        setTimeout(() => {
-            modal.classList.add('active');
-        }, 10);
+        // Cooldown setting
+        const cooldownSelect = document.getElementById('cooldown-setting');
+        if (cooldownSelect) {
+            cooldownSelect.addEventListener('change', () => this.updateQRCooldown());
+        }
     }
 
     /**
@@ -636,93 +643,60 @@ export class Dashboard {
     }
 
     /**
-     * Add QR Scanner Styles
+     * Add Embedded QR Scanner Styles
      */
-    addQRScannerStyles() {
-        if (document.getElementById('dashboard-qr-scanner-styles')) return;
+    addEmbeddedQRScannerStyles() {
+        if (document.getElementById('dashboard-embedded-qr-styles')) return;
 
         const styles = document.createElement('style');
-        styles.id = 'dashboard-qr-scanner-styles';
+        styles.id = 'dashboard-embedded-qr-styles';
         styles.textContent = `
-            .qr-scanner-modal {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 10000;
-                background: rgba(0, 0, 0, 0.9);
-                opacity: 0;
-                visibility: hidden;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            .qr-scanner-modal.active {
-                opacity: 1;
-                visibility: visible;
-            }
-
-            .qr-scanner-container {
-                width: 90%;
-                max-width: 600px;
+            .qr-scanner-section {
                 background: var(--card-bg, #2e3540);
                 border-radius: 16px;
-                overflow: hidden;
-                transform: translateY(50px);
-                transition: transform 0.3s ease;
-            }
-
-            .qr-scanner-modal.active .qr-scanner-container {
-                transform: translateY(0);
+                padding: 24px;
+                margin: 24px 0;
+                border: 1px solid var(--border-color, #3a4553);
             }
 
             .qr-scanner-header {
                 display: flex;
                 justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .qr-scanner-title {
+                flex: 1;
+                min-width: 250px;
+            }
+
+            .qr-scanner-title .section-title {
+                display: flex;
                 align-items: center;
-                padding: 20px;
-                background: linear-gradient(135deg, #ff7a45, #ff6b35);
-                color: white;
+                gap: 10px;
+                margin: 0 0 5px 0;
+                color: var(--text-color, #ffffff);
+                font-size: 1.5rem;
             }
 
-            .qr-scanner-header h2 {
+            .qr-scanner-title .section-subtitle {
                 margin: 0;
-                font-size: 1.5rem;
-                font-weight: 600;
-            }
-
-            .qr-scanner-close {
-                background: none;
-                border: none;
-                color: white;
-                font-size: 1.5rem;
-                cursor: pointer;
-                padding: 8px;
-                border-radius: 50%;
-                transition: background 0.3s ease;
-            }
-
-            .qr-scanner-close:hover {
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-            .qr-scanner-content {
-                padding: 20px;
+                color: var(--text-secondary, #a0a0a0);
+                font-size: 0.9rem;
             }
 
             .qr-scanner-controls {
                 display: flex;
-                gap: 15px;
-                margin-bottom: 20px;
+                gap: 12px;
                 align-items: center;
                 flex-wrap: wrap;
             }
 
             .qr-control-btn {
-                padding: 12px 20px;
+                padding: 10px 16px;
                 border: none;
                 border-radius: 8px;
                 cursor: pointer;
@@ -730,8 +704,9 @@ export class Dashboard {
                 transition: all 0.3s ease;
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: 6px;
                 font-size: 14px;
+                white-space: nowrap;
             }
 
             .qr-control-btn--primary {
@@ -741,7 +716,7 @@ export class Dashboard {
 
             .qr-control-btn--primary:hover {
                 background: #e05a25;
-                transform: translateY(-2px);
+                transform: translateY(-1px);
             }
 
             .qr-control-btn--secondary {
@@ -759,7 +734,8 @@ export class Dashboard {
                 color: var(--text-color, white);
                 border: 1px solid var(--border-color, #555);
                 border-radius: 6px;
-                font-size: 14px;
+                font-size: 13px;
+                min-width: 150px;
             }
 
             .qr-status {
@@ -768,12 +744,19 @@ export class Dashboard {
                 border-radius: 8px;
                 margin-bottom: 20px;
                 text-align: center;
+                border: 1px solid rgba(255, 122, 69, 0.2);
+            }
+
+            .qr-status .status-message {
+                margin: 0;
+                color: var(--text-color, #ffffff);
+                font-weight: 500;
             }
 
             .qr-video-container {
                 position: relative;
                 width: 100%;
-                min-height: 300px;
+                min-height: 320px;
                 background: #000;
                 border-radius: 12px;
                 overflow: hidden;
@@ -781,6 +764,7 @@ export class Dashboard {
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                border: 2px solid var(--border-color, #3a4553);
             }
 
             #qr-video {
@@ -793,18 +777,44 @@ export class Dashboard {
             .qr-scanning-indicator {
                 color: #00ff00;
                 font-weight: bold;
-                animation: blink 1s infinite;
+                animation: qr-blink 1s infinite;
                 font-size: 18px;
+                text-align: center;
             }
 
-            @keyframes blink {
+            @keyframes qr-blink {
                 0%, 50% { opacity: 1; }
                 51%, 100% { opacity: 0.3; }
             }
 
+            .qr-placeholder {
+                text-align: center;
+                color: var(--text-secondary, #a0a0a0);
+                padding: 40px 20px;
+            }
+
+            .qr-placeholder .placeholder-icon {
+                font-size: 3rem;
+                margin-bottom: 15px;
+                opacity: 0.5;
+            }
+
+            .qr-placeholder .placeholder-title {
+                margin: 0 0 8px 0;
+                color: var(--text-color, #ffffff);
+                font-size: 1.1rem;
+            }
+
+            .qr-placeholder .placeholder-text {
+                margin: 0;
+                font-size: 0.9rem;
+                line-height: 1.4;
+            }
+
             .qr-scan-results {
-                background: var(--card-bg, #333);
-                border-radius: 8px;
+                background: rgba(255, 122, 69, 0.05);
+                border: 1px solid rgba(255, 122, 69, 0.2);
+                border-radius: 12px;
                 padding: 20px;
                 margin-top: 20px;
                 display: none;
@@ -812,17 +822,33 @@ export class Dashboard {
 
             .qr-scan-results.show {
                 display: block;
+                animation: qr-slide-in 0.3s ease;
+            }
+
+            @keyframes qr-slide-in {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
 
             .qr-scan-results h3 {
                 color: #00ff00;
                 margin-top: 0;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
 
             @media (max-width: 768px) {
-                .qr-scanner-container {
-                    width: 95%;
-                    margin: 10px;
+                .qr-scanner-header {
+                    flex-direction: column;
+                    align-items: stretch;
                 }
 
                 .qr-scanner-controls {
@@ -833,50 +859,21 @@ export class Dashboard {
                 .qr-control-btn {
                     justify-content: center;
                 }
+
+                .qr-select {
+                    min-width: auto;
+                }
+
+                .qr-video-container {
+                    min-height: 250px;
+                }
             }
         `;
 
         document.head.appendChild(styles);
     }
 
-    /**
-     * Setup QR Scanner Event Listeners
-     */
-    setupQRScannerEventListeners() {
-        // Load jsQR library
-        this.loadJSQRLibrary();
 
-        // Close button
-        const closeBtn = document.getElementById('qr-scanner-close');
-        closeBtn.addEventListener('click', () => this.closeQRScanner());
-
-        // Overlay click to close
-        const overlay = document.querySelector('.qr-scanner-overlay');
-        overlay.addEventListener('click', () => this.closeQRScanner());
-
-        // Start camera button
-        const startBtn = document.getElementById('start-camera-btn');
-        startBtn.addEventListener('click', () => this.startQRCamera());
-
-        // Stop camera button
-        const stopBtn = document.getElementById('stop-camera-btn');
-        stopBtn.addEventListener('click', () => this.stopQRCamera());
-
-        // Cooldown setting
-        const cooldownSelect = document.getElementById('cooldown-setting');
-        cooldownSelect.addEventListener('change', () => this.updateQRCooldown());
-
-        // Initialize QR scanner variables
-        this.qrScanning = false;
-        this.qrStream = null;
-        this.qrVideo = null;
-        this.qrCanvas = null;
-        this.qrCtx = null;
-        this.qrLastScanned = null;
-        this.qrLastScanTime = 0;
-        this.qrScanCooldown = 5000;
-        this.qrIsProcessing = false;
-    }
 
     /**
      * Load jsQR Library
@@ -907,6 +904,7 @@ export class Dashboard {
         const video = document.getElementById('qr-video');
         const canvas = document.getElementById('qr-canvas');
         const scanningIndicator = document.getElementById('qr-scanning-indicator');
+        const placeholder = document.getElementById('qr-placeholder');
         const startBtn = document.getElementById('start-camera-btn');
         const stopBtn = document.getElementById('stop-camera-btn');
 
@@ -936,6 +934,7 @@ export class Dashboard {
                 status.innerHTML = '<div class="status-message">✅ Camera started! Hold QR code in front of camera</div>';
                 video.style.display = 'block';
                 scanningIndicator.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'inline-flex';
 
@@ -974,29 +973,19 @@ export class Dashboard {
 
         const video = document.getElementById('qr-video');
         const scanningIndicator = document.getElementById('qr-scanning-indicator');
+        const placeholder = document.getElementById('qr-placeholder');
         const startBtn = document.getElementById('start-camera-btn');
         const stopBtn = document.getElementById('stop-camera-btn');
         const status = document.getElementById('qr-status');
+        const results = document.getElementById('qr-scan-results');
 
         if (video) video.style.display = 'none';
         if (scanningIndicator) scanningIndicator.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'block';
         if (startBtn) startBtn.style.display = 'inline-flex';
         if (stopBtn) stopBtn.style.display = 'none';
         if (status) status.innerHTML = '<div class="status-message">📹 Camera stopped</div>';
-    }
-
-    /**
-     * Close QR Scanner
-     */
-    closeQRScanner() {
-        this.stopQRCamera();
-        const modal = document.getElementById('qr-scanner-modal');
-        if (modal) {
-            modal.classList.remove('active');
-            setTimeout(() => {
-                modal.remove();
-            }, 300);
-        }
+        if (results) results.classList.remove('show');
     }
 
     /**
@@ -1223,13 +1212,18 @@ export class Dashboard {
         // Play success sound
         this.playQRSuccessSound();
 
-        // Close scanner after delay
+        // Refresh dashboard to show updated stats after delay
         setTimeout(() => {
-            this.closeQRScanner();
-
-            // Refresh dashboard to show updated stats
             this.refresh();
-        }, 3000);
+
+            // Clear results after showing success
+            setTimeout(() => {
+                const resultsDiv = document.getElementById('qr-scan-results');
+                if (resultsDiv) {
+                    resultsDiv.classList.remove('show');
+                }
+            }, 2000);
+        }, 1000);
     }
 
     /**

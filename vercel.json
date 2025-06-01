@@ -1,36 +1,31 @@
 {
   "version": 2,
-  "name": "agp-attendance-system",
   "builds": [
     {
       "src": "**/*",
       "use": "@vercel/static"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/core/index.html"
+      "source": "/",
+      "destination": "/core/login.html"
     },
     {
-      "src": "/login",
-      "dest": "/core/login.html"
+      "source": "/login",
+      "destination": "/core/login.html"
     },
     {
-      "src": "/register",
-      "dest": "/core/register.html"
+      "source": "/register",
+      "destination": "/core/register.html"
     },
     {
-      "src": "/app",
-      "dest": "/core/index.html"
+      "source": "/app",
+      "destination": "/core/index.html"
     },
     {
-      "src": "/dashboard",
-      "dest": "/core/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/dashboard",
+      "destination": "/core/index.html"
     }
   ],
   "headers": [
@@ -80,10 +75,5 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "src/api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
   }
 }

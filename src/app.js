@@ -166,6 +166,9 @@ class AttendanceApp {
         this.components.dashboard = new Dashboard(this);
         this.components.dashboard.init();
 
+        // Make dashboard globally accessible for QR scanner
+        window.dashboard = this.components.dashboard;
+
         // Initialize Activity Logger
         this.components.activityLogger = new ActivityLogger(this);
         this.components.activityLogger.init();

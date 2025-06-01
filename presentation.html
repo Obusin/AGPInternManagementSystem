@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AG&P Attendance System - Presentation Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e2430 0%, #2a3441 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .presentation-container {
+            max-width: 800px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .logo {
+            margin-bottom: 30px;
+        }
+
+        .logo img {
+            height: 80px;
+            width: auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff7a45, #ff9a65);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            color: #a0a0a0;
+        }
+
+        .demo-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .demo-btn {
+            padding: 20px;
+            background: rgba(255, 122, 69, 0.1);
+            border: 2px solid #ff7a45;
+            border-radius: 12px;
+            color: #ffffff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-btn:hover {
+            background: rgba(255, 122, 69, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 122, 69, 0.3);
+        }
+
+        .demo-btn i {
+            font-size: 2rem;
+            color: #ff7a45;
+        }
+
+        .demo-btn h3 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .demo-btn p {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .feature {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .feature i {
+            font-size: 2rem;
+            color: #ff7a45;
+            margin-bottom: 10px;
+        }
+
+        .feature h4 {
+            margin-bottom: 10px;
+        }
+
+        .feature p {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .presentation-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <div class="logo">
+            <img src="/assets/images/AGP-Logo.png" alt="AG&P Logo" onerror="this.style.display='none'">
+        </div>
+        
+        <h1>AG&P Attendance System</h1>
+        <p class="subtitle">Professional Intern Management & Attendance Tracking</p>
+        
+        <div class="demo-buttons">
+            <a href="/core/login.html" class="demo-btn">
+                <i class="fas fa-sign-in-alt"></i>
+                <h3>Login Demo</h3>
+                <p>Test the login system with demo accounts</p>
+            </a>
+            
+            <a href="/core/index.html" class="demo-btn">
+                <i class="fas fa-tachometer-alt"></i>
+                <h3>Dashboard Demo</h3>
+                <p>View the full dashboard with all features</p>
+            </a>
+            
+            <a href="javascript:void(0)" onclick="showQRDemo()" class="demo-btn">
+                <i class="fas fa-qrcode"></i>
+                <h3>QR Scanner Demo</h3>
+                <p>Test the embedded QR code scanner</p>
+            </a>
+            
+            <a href="javascript:void(0)" onclick="showFeatures()" class="demo-btn">
+                <i class="fas fa-list"></i>
+                <h3>Features Overview</h3>
+                <p>See all system capabilities</p>
+            </a>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <i class="fas fa-users"></i>
+                <h4>User Management</h4>
+                <p>Role-based access control with developer and user roles</p>
+            </div>
+            
+            <div class="feature">
+                <i class="fas fa-clock"></i>
+                <h4>Time Tracking</h4>
+                <p>Accurate attendance tracking with time in/out logging</p>
+            </div>
+            
+            <div class="feature">
+                <i class="fas fa-mobile-alt"></i>
+                <h4>Mobile Ready</h4>
+                <p>Responsive design works on all devices</p>
+            </div>
+            
+            <div class="feature">
+                <i class="fas fa-shield-alt"></i>
+                <h4>Secure</h4>
+                <p>Advanced security with session management</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showQRDemo() {
+            alert('QR Scanner is embedded in the dashboard. Click "Dashboard Demo" to access it!');
+        }
+        
+        function showFeatures() {
+            const features = [
+                '✅ User Authentication & Role Management',
+                '✅ Real-time Attendance Tracking', 
+                '✅ QR Code Scanner Integration',
+                '✅ Activity Logging System',
+                '✅ Mobile-Responsive Design',
+                '✅ Secure Session Management',
+                '✅ Dashboard Analytics',
+                '✅ Professional UI/UX'
+            ];
+            
+            alert('AG&P Attendance System Features:\n\n' + features.join('\n'));
+        }
+        
+        // Auto-redirect to dashboard after 10 seconds
+        setTimeout(() => {
+            if (confirm('Ready to see the dashboard? Click OK to proceed to the main system.')) {
+                window.location.href = '/core/index.html';
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

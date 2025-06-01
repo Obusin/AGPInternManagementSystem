@@ -416,42 +416,30 @@
             }
         });
 
-        // Check authentication and load user data
+        // EMERGENCY PRESENTATION MODE - BYPASS AUTHENTICATION
         window.addEventListener('load', async () => {
             try {
-                console.log('Dashboard loading - checking authentication...');
+                console.log('PRESENTATION MODE: Loading dashboard...');
 
-                // Simple session check - just look for user data
-                const currentUserData = localStorage.getItem('agp_current_user');
-                const loginTime = localStorage.getItem('agp_login_time');
+                // Create demo user for presentation
+                const user = {
+                    id: 'demo_001',
+                    name: 'Demo User',
+                    email: 'demo@agp.com',
+                    role: 'developer',
+                    position: 'Software Developer',
+                    department: 'IT Development',
+                    avatar: 'https://ui-avatars.com/api/?name=Demo+User&background=ff7a45&color=fff'
+                };
 
-                console.log('User data found:', !!currentUserData);
-                console.log('Login time found:', !!loginTime);
+                // Set demo user data
+                localStorage.setItem('agp_current_user', JSON.stringify(user));
+                localStorage.setItem('agp_login_time', new Date().toISOString());
 
-                if (!currentUserData || !loginTime) {
-                    console.log('No session found, redirecting to login');
-                    window.location.href = 'login.html';
-                    return;
+                // Set current user in database if available
+                if (window.userDatabase) {
+                    window.userDatabase.currentUser = user;
                 }
-
-                const user = JSON.parse(currentUserData);
-                console.log('User loaded:', user.name, user.role);
-
-                // Check session expiration (24 hours for now)
-                const loginDate = new Date(loginTime);
-                const now = new Date();
-                const sessionDuration = (now - loginDate) / (1000 * 60 * 60); // hours
-
-                if (sessionDuration > 24) {
-                    console.log('Session expired, redirecting to login');
-                    localStorage.removeItem('agp_current_user');
-                    localStorage.removeItem('agp_login_time');
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                // Set current user in database
-                window.userDatabase.currentUser = user;
 
                 // Update UI with user data
                 updateUserInterface(user);
